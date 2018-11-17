@@ -12,7 +12,7 @@ abstract class SortButton extends CommandButton {
         sort();
     }
 
-    abstract Comparator<Long> getComparator();
+    abstract RecordComparator getComparator();
 
     private void sort(){
         try {
@@ -21,12 +21,16 @@ abstract class SortButton extends CommandButton {
                 for (int j = 0; j < n-i-1; j++){
                     long record1pos = j * RECORD_SIZE * 2;
                     long record2pos = (j+1) * RECORD_SIZE * 2;
-                    if (getComparator().compare(record1pos, record2pos) > 0)
-                        swapRecords(record1pos, record2pos);
+
+                    raf.seek(record1pos);
+                    String address1 = FixedLengthStringIO.readFixedLengthString(RECORD_SIZE, raf);
+                    String address2 = FixedLengthStringIO.readFixedLengthString(RECORD_SIZE, raf);
+
+                    if (getComparator().compare(address1, address2) > 0)
+                        swapRecords(record1pos, record2pos, address1, address2);
                 }
             }
         } catch (IOException e) {
-            System.err.println("An IOException occurred while trying to sort records");
             e.printStackTrace();
         }
     }
@@ -36,15 +40,11 @@ abstract class SortButton extends CommandButton {
     }
 
 
-    private void swapRecords(long pos1, long pos2) throws IOException {
-        raf.seek(pos1);
-        String rec1 = FixedLengthStringIO.readFixedLengthString(RECORD_SIZE, raf);
+    private void swapRecords(long pos1, long pos2, String record1, String record2) throws IOException {
         raf.seek(pos2);
-        String rec2 = FixedLengthStringIO.readFixedLengthString(RECORD_SIZE, raf);
-        raf.seek(pos2);
-        raf.writeChars(rec1);
+        raf.writeChars(record1);
         raf.seek(pos1);
-        raf.writeChars(rec2);
+        raf.writeChars(record2);
     }
 }
 

@@ -8,8 +8,7 @@ class Sort2Button extends SortButton {
     }
 
     @Override
-    Comparator<Long> getComparator() {
-        int zipCodeOffset = 2 * (NAME_SIZE + CITY_SIZE + STREET_SIZE + STATE_SIZE);
-        return new ZipCodeComparator(raf, ZIP_SIZE, zipCodeOffset);
+    ZipCodeComparator getComparator() {
+        return new ZipCodeComparator();
     }
 }

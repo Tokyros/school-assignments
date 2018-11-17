@@ -1,31 +1,22 @@
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Comparator;
 
-class ZipCodeComparator implements Comparator<Long> {
-    private RandomAccessFile raf;
-    private int zipCodeSize;
-    private int zipCodeOffset;
+class ZipCodeComparator extends RecordComparator {
+    @Override
+    public int compare(String o1, String o2) {
+        String zip1 = getStringToCompare(o1);
+        String zip2 = getStringToCompare(o2);
 
-    public ZipCodeComparator(RandomAccessFile raf, int zipCodeSize, int zipCodeOffset) {
-        this.raf = raf;
-        this.zipCodeSize = zipCodeSize;
-        this.zipCodeOffset = zipCodeOffset;
+        Integer zipCodeNum1 = Integer.parseInt(zip1);
+        Integer zipCodeNum2 = Integer.parseInt(zip2);
+        return zipCodeNum1.compareTo(zipCodeNum2);
     }
 
     @Override
-    public int compare(Long o1, Long o2) {
-        try {
-            raf.seek(o1 + zipCodeOffset);
-            String zipCode1 = FixedLengthStringIO.readFixedLengthString(zipCodeSize, raf);
-            Integer zipCodeNum1 = Integer.parseInt(zipCode1.trim());
-            raf.seek(o2 + zipCodeOffset);
-            String zipCode2 = FixedLengthStringIO.readFixedLengthString(zipCodeSize, raf);
-            Integer zipCodeNum2 = Integer.parseInt(zipCode2.trim());
-            return zipCodeNum1.compareTo(zipCodeNum2);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return 0;
-        }
+    protected int getBeginIndex() {
+        return CommandButton.NAME_SIZE + CommandButton.STREET_SIZE + CommandButton.CITY_SIZE + CommandButton.STATE_SIZE;
+    }
+
+    @Override
+    protected int getEndIndex() {
+        return getBeginIndex() + CommandButton.ZIP_SIZE;
     }
 }

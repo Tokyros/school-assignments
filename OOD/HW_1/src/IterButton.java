@@ -48,8 +48,6 @@ class IterButton extends CommandButton {
                 treeSet.add(addressIterator.next());
             }
 
-            System.out.println(treeSet.size());
-
             raf.seek(0);
 
             for (String record : treeSet) {

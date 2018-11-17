@@ -8,7 +8,7 @@ class Sort1Button extends SortButton {
     }
 
     @Override
-    Comparator<Long> getComparator() {
-        return new RecordNameComparator(raf, NAME_SIZE);
+    RecordNameComparator getComparator() {
+        return new RecordNameComparator();
     }
 }
