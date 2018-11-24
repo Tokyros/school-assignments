@@ -35,7 +35,7 @@ int showMenu(int *mat)
         flipHorizontally(mat, MAT_SIZE, MAT_SIZE);
         break;
     case -1:
-            return 0;
+        return 0;
     default:
     	printf(INVALID_CHOICE);
     }

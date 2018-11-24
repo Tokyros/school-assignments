@@ -1,14 +1,7 @@
-#include <ctype.h>
-#include <time.h>
-#include <stdlib.h>
-
-
+#include "matUtils.h"
 #include "numberGame.h"
 #include "pictureManipulation.h"
 
-#define MENU "Please choose one of the following options\nP/p - Picture Manipulation\nN/n - Number Game\nE/e - Quit\n"
-
-char getChar();
 
 int main()
 {
@@ -31,16 +24,9 @@ int main()
         case 'n':
             numberGame();
             break;
+        default:
+			printf(INVALID_CHOICE);
+			break;
         }
     }
-}
-
-char getChar()
-{
-	char c;
-    do
-    {
-        scanf("%c", &c);
-    } while (isspace(c));
-    return c;
 }

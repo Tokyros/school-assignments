@@ -26,3 +26,14 @@ void printMat(int *mat, int rows, int cols)
     }
     printf("\n");
 }
+
+
+char getChar()
+{
+	char c;
+    do
+    {
+        scanf("%c", &c);
+    } while (isspace(c));
+    return c;
+}

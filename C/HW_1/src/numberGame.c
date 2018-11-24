@@ -1,32 +1,38 @@
 #include "numberGame.h"
 
-#define INVALID_CHOICE "Invalid choice!\n"
-#define YOU_WIN "You win! The game is over!\n"
-#define YOUR_STEP "Your step: "
 
 void numberGame()
 {
-    int mat[NUM_ROWS][NUM_COLS];
+    int mat[NUM_ROWS][NUM_COLS] = {
+    		{1,2,3},
+			{4,5,6},
+			{7,0,8}
+    };
     playNumberGame((int*)mat, NUM_ROWS, NUM_COLS);
 }
 
 void playNumberGame(int *mat, int rows, int cols)
 {
 	int choice, emptyIndex;
-    initMatNumberGame(mat, NUM_ROWS, NUM_COLS);
+//    initMatNumberGame(mat, NUM_ROWS, NUM_COLS);
 
-	shuffleMat(mat, NUM_ROWS, NUM_COLS);
+//	shuffleMat(mat, NUM_ROWS, NUM_COLS);
 
     emptyIndex = findEmptyIndex(mat, NUM_ROWS, NUM_COLS);
 
     while (!gameIsSolved(mat, NUM_ROWS, NUM_COLS))
     {
     	printMat(mat, NUM_ROWS, NUM_COLS);
+    	int validStep = 0;
 
     	do {
     		printf(YOUR_STEP);
     		scanf("%d", &choice);
-    	} while (!maybePlayStep(mat, choice, &emptyIndex, rows, cols));
+    		validStep = maybePlayStep(mat, choice, &emptyIndex, rows, cols);
+    		if (!validStep) {
+    			printf(INVALID_CHOICE);
+    		}
+    	} while (!validStep);
     }
 
     printf(YOU_WIN);
@@ -88,30 +94,44 @@ void shuffleMat(int *mat, int rows, int cols)
 int maybePlayStep(int *mat, int choice, int *emptyIndex, int rows, int cols)
 {
 	int i;
-	int diff;
 	if (choice > 0 && choice < rows * cols)
 	{
 		for (i = 0; i < rows * cols; i++)
 		{
 			if (choice == *(mat + i))
 			{
-				diff = (i - *emptyIndex);
-				switch(diff)
-				{
-					case -1:
-					case 1:
-					case NUM_COLS:
-					case -NUM_COLS:
-						swap(mat, i / cols, i % cols, *emptyIndex / cols, *emptyIndex % cols, cols);
-						*emptyIndex = i;
-						return 1;
-					default:
-						printf(INVALID_CHOICE);
-						return 0;
-				}
+				return maybeSwapNumbers(mat, emptyIndex, i, cols);
 			}
 		}
 	}
-	printf(INVALID_CHOICE);
+	return 0;
+}
+
+int maybeSwapNumbers(int *mat, int *emptyIndex, int numberIndex, int cols)
+{
+	int shouldSwap = 0, diff = (numberIndex - *emptyIndex), numberIndexRow = numberIndex / cols, numberIndexCol = numberIndex % cols;
+	switch(diff)
+	{
+		case -1:
+			if (numberIndexCol != cols - 1) {
+				shouldSwap = 1;
+			}
+			break;
+		case 1:
+			if (numberIndexCol != 0) {
+				shouldSwap = 1;
+			}
+			break;
+		case NUM_COLS:
+		case -NUM_COLS:
+			shouldSwap = 1;
+			break;
+	}
+	if (shouldSwap)
+	{
+		swap(mat, numberIndexRow, numberIndexCol, *emptyIndex / cols, *emptyIndex % cols, cols);
+		*emptyIndex = numberIndex;
+		return 1;
+	}
 	return 0;
 }
