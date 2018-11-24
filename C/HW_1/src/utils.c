@@ -1,4 +1,4 @@
-#include "matUtils.h"
+#include "utils.h"
 
 void swap(int* mat, int rowI, int colI, int rowJ, int colJ, int cols)
 {

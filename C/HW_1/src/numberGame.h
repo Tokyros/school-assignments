@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "matUtils.h"
+#include "utils.h"
 
 #define NUM_ROWS 3
 #define NUM_COLS 3

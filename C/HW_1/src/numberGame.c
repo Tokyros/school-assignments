@@ -3,20 +3,16 @@
 
 void numberGame()
 {
-    int mat[NUM_ROWS][NUM_COLS] = {
-    		{1,2,3},
-			{4,5,6},
-			{7,0,8}
-    };
+    int mat[NUM_ROWS][NUM_COLS];
     playNumberGame((int*)mat, NUM_ROWS, NUM_COLS);
 }
 
 void playNumberGame(int *mat, int rows, int cols)
 {
 	int choice, emptyIndex;
-//    initMatNumberGame(mat, NUM_ROWS, NUM_COLS);
+   initMatNumberGame(mat, NUM_ROWS, NUM_COLS);
 
-//	shuffleMat(mat, NUM_ROWS, NUM_COLS);
+	shuffleMat(mat, NUM_ROWS, NUM_COLS);
 
     emptyIndex = findEmptyIndex(mat, NUM_ROWS, NUM_COLS);
 

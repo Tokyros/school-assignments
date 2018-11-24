@@ -1,5 +1,5 @@
-#ifndef MATUTILS_H_
-#define MATUTILS_H_
+#ifndef UTILS_H_
+#define UTILS_H_
 
 #include <stdio.h>
 #include <ctype.h>

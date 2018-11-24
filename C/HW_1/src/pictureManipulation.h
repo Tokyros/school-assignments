@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "matUtils.h"
+#include "utils.h"
 
 #define MAT_SIZE 3
 #define MAX 100
