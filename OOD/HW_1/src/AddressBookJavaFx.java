@@ -4,7 +4,6 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
@@ -14,7 +13,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.*;
 
 public class AddressBookJavaFx extends Application {
     public static void main(String[] args) {
@@ -201,154 +199,10 @@ class AddressBookPane extends GridPane {
     }
 }
 
-interface Command {
-    public void Execute();
-}
 
-class CommandButton extends Button implements Command {
-    public final static int NAME_SIZE = 32;
-    public final static int STREET_SIZE = 32;
-    public final static int CITY_SIZE = 20;
-    public final static int STATE_SIZE = 10;
-    public final static int ZIP_SIZE = 5;
-    public final static int RECORD_SIZE =
-            (NAME_SIZE + STREET_SIZE + CITY_SIZE + STATE_SIZE + ZIP_SIZE);
-    protected AddressBookPane p;
-    protected RandomAccessFile raf;
 
-    public CommandButton(AddressBookPane pane, RandomAccessFile r) {
-        super();
-        p = pane;
-        raf = r;
-    }
 
-    public void Execute() {
-    }
 
-    /**
-     * Write a record at the end of the file
-     */
-    public void writeAddress() {
-        try {
-            raf.seek(raf.length());
-            FixedLengthStringIO.writeFixedLengthString(p.GetName(),
-                    NAME_SIZE, raf);
-            FixedLengthStringIO.writeFixedLengthString(p.GetStreet(),
-                    STREET_SIZE, raf);
-            FixedLengthStringIO.writeFixedLengthString(p.GetCity(),
-                    CITY_SIZE, raf);
-            FixedLengthStringIO.writeFixedLengthString(p.GetState(),
-                    STATE_SIZE, raf);
-            FixedLengthStringIO.writeFixedLengthString(p.GetZip(),
-                    ZIP_SIZE, raf);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
 
-    /**
-     * Read a record at the specified position
-     */
-    public void readAddress(long position) throws IOException {
-        raf.seek(position);
-        String name =
-                FixedLengthStringIO.readFixedLengthString(NAME_SIZE, raf);
-        String street =
-                FixedLengthStringIO.readFixedLengthString(STREET_SIZE, raf);
-        String city =
-                FixedLengthStringIO.readFixedLengthString(CITY_SIZE, raf);
-        String state =
-                FixedLengthStringIO.readFixedLengthString(STATE_SIZE, raf);
-        String zip =
-                FixedLengthStringIO.readFixedLengthString(ZIP_SIZE, raf);
-        p.SetName(name);
-        p.SetStreet(street);
-        p.SetCity(city);
-        p.SetState(state);
-        p.SetZip(zip);
-    }
-}
 
-class AddButton extends CommandButton {
-    public AddButton(AddressBookPane pane, RandomAccessFile r) {
-        super(pane, r);
-        this.setText("Add");
-    }
-
-    @Override
-    public void Execute() {
-        writeAddress();
-    }
-}
-
-class NextButton extends CommandButton {
-    public NextButton(AddressBookPane pane, RandomAccessFile r) {
-        super(pane, r);
-        this.setText("Next");
-    }
-
-    @Override
-    public void Execute() {
-        try {
-            long currentPosition = raf.getFilePointer();
-            if (currentPosition < raf.length())
-                readAddress(currentPosition);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-}
-
-class PreviousButton extends CommandButton {
-    public PreviousButton(AddressBookPane pane, RandomAccessFile r) {
-        super(pane, r);
-        this.setText("Previous");
-    }
-
-    @Override
-    public void Execute() {
-        try {
-            long currentPosition = raf.getFilePointer();
-            if (currentPosition - 2 * 2 * RECORD_SIZE >= 0)
-                readAddress(currentPosition - 2 * 2 * RECORD_SIZE);
-            else ;
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-}
-
-class LastButton extends CommandButton {
-    public LastButton(AddressBookPane pane, RandomAccessFile r) {
-        super(pane, r);
-        this.setText("Last");
-    }
-
-    @Override
-    public void Execute() {
-        try {
-            long lastPosition = raf.length();
-            if (lastPosition > 0)
-                readAddress(lastPosition - 2 * RECORD_SIZE);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-}
-
-class FirstButton extends CommandButton {
-    public FirstButton(AddressBookPane pane, RandomAccessFile r) {
-        super(pane, r);
-        this.setText("First");
-    }
-
-    @Override
-    public void Execute() {
-        try {
-            if (raf.length() > 0) readAddress(0);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-}
 

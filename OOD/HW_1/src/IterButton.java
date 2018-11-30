@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.LinkedHashMap;
-import java.util.TreeSet;
+import java.util.*;
 
 class IterButton extends CommandButton {
     private boolean wasClicked = false;
@@ -13,7 +12,7 @@ class IterButton extends CommandButton {
     private void removeDuplicates(){
         try {
             raf.seek(0);
-            AddressIterator lit = new AddressIterator(raf);
+            ListIterator<String> lit = iterator();
             LinkedHashMap<String, String> map = new LinkedHashMap<>();
             while (lit.hasNext()) {
                 String record = lit.next();
@@ -22,41 +21,46 @@ class IterButton extends CommandButton {
             }
 
             raf.seek(0);
-
-            for (String key : map.keySet()) {
-                lit.next();
-                lit.set(map.get(key));
-            }
-
-            while (lit.hasNext()) {
-                lit.next();
-                lit.remove();
-            }
+            readFromIterator(map.values().iterator());
 
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void sortRecords(){
+    private void sortRecords(){
         try {
             raf.seek(0);
-            AddressIterator addressIterator = new AddressIterator(raf);
+            ListIterator<String> addressIterator = iterator();
             TreeSet<String> treeSet = new TreeSet<>(new StreetComparator());
 
             while (addressIterator.hasNext()) {
                 treeSet.add(addressIterator.next());
             }
 
-            raf.seek(0);
-
-            for (String record : treeSet) {
-                addressIterator.next();
-                addressIterator.set(record);
-            }
+            readFromIterator(treeSet.iterator());
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void readFromIterator(Iterator<String> iter) throws IOException {
+        raf.seek(0);
+        ListIterator<String> recordIterator = iterator();
+
+        while (iter.hasNext()) {
+            if (recordIterator.hasNext()) {
+                recordIterator.next();
+                recordIterator.set(iter.next());
+            } else {
+                recordIterator.add(iter.next());
+            }
+        }
+
+        while (recordIterator.hasNext()) {
+            recordIterator.next();
+            recordIterator.remove();
         }
     }
 
