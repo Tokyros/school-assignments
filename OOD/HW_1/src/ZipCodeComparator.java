@@ -5,8 +5,8 @@ class ZipCodeComparator extends RecordComparator {
         String zip1 = getStringToCompare(o1);
         String zip2 = getStringToCompare(o2);
 
-        Integer zipCodeNum1 = Integer.parseInt(zip1);
-        Integer zipCodeNum2 = Integer.parseInt(zip2);
+        Integer zipCodeNum1 = Integer.parseInt(zip1.trim());
+        Integer zipCodeNum2 = Integer.parseInt(zip2.trim());
         return zipCodeNum1.compareTo(zipCodeNum2);
     }
 

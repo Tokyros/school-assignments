@@ -1,68 +1,62 @@
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
 
 class IterButton extends CommandButton {
     private boolean wasClicked = false;
+    private ListIterator<String> lit = iterator();
+    LinkedHashMap<String, String> recordsMap = new LinkedHashMap<>();
+
     public IterButton(AddressBookPane pane, RandomAccessFile r) {
         super(pane, r);
         this.setText("Iter");
     }
 
-    private void removeDuplicates(){
-        try {
-            raf.seek(0);
-            ListIterator<String> lit = iterator();
-            LinkedHashMap<String, String> map = new LinkedHashMap<>();
-            while (lit.hasNext()) {
-                String record = lit.next();
-                String key = record.substring(0, (CommandButton.NAME_SIZE + CommandButton.CITY_SIZE + CommandButton.STATE_SIZE + CommandButton.STREET_SIZE));
-                map.put(key, record);
-            }
-
-            raf.seek(0);
-            readFromIterator(map.values().iterator());
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void rewindIterator() {
+        while (lit.hasPrevious()) {
+            lit.previous();
         }
+    }
+
+    private void removeDuplicates(){
+        rewindIterator();
+
+        while (lit.hasNext()) {
+            String record = lit.next();
+            String key = record.substring(0, (CommandButton.NAME_SIZE + CommandButton.CITY_SIZE + CommandButton.STATE_SIZE + CommandButton.STREET_SIZE));
+            recordsMap.put(key, record);
+        }
+
+        readFromIterator(recordsMap.values().iterator());
     }
 
     private void sortRecords(){
-        try {
-            raf.seek(0);
-            ListIterator<String> addressIterator = iterator();
-            TreeSet<String> treeSet = new TreeSet<>(new StreetComparator());
+        rewindIterator();
 
-            while (addressIterator.hasNext()) {
-                treeSet.add(addressIterator.next());
-            }
+        TreeSet<String> treeSet = new TreeSet<>(new StreetComparator());
 
-            readFromIterator(treeSet.iterator());
+        treeSet.addAll(recordsMap.values());
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        readFromIterator(treeSet.iterator());
     }
 
-    private void readFromIterator(Iterator<String> iter) throws IOException {
-        raf.seek(0);
-        ListIterator<String> recordIterator = iterator();
-
-        while (iter.hasNext()) {
-            if (recordIterator.hasNext()) {
-                recordIterator.next();
-                recordIterator.set(iter.next());
+    private void readFromIterator(Iterator<String> iterator) {
+        rewindIterator();
+        while (iterator.hasNext()) {
+            if (lit.hasNext()) {
+                lit.next();
+                lit.set(iterator.next());
             } else {
-                recordIterator.add(iter.next());
+                lit.add(iterator.next());
+                lit.next();
             }
         }
 
-        while (recordIterator.hasNext()) {
-            recordIterator.next();
-            recordIterator.remove();
+        while (lit.hasNext()) {
+            lit.next();
+            lit.remove();
         }
     }
+
 
     @Override
     public void Execute() {
@@ -72,6 +66,7 @@ class IterButton extends CommandButton {
         } else {
             sortRecords();
         }
+
         new FirstButton(p, raf).Execute();
     }
 }
