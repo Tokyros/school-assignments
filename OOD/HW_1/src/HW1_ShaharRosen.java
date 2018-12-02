@@ -1,3 +1,5 @@
+//Shahar Rosen
+
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -14,7 +16,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class AddressBookJavaFx extends Application {
+public class HW1_ShaharRosen extends Application {
     public static void main(String[] args) {
         launch(args);
     }
