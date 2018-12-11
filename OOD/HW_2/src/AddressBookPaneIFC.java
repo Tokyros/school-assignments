@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public interface AddressBookPaneIFC {
-    void addButtons();
+    ArrayList<CommandButton> getButtons();
 }
