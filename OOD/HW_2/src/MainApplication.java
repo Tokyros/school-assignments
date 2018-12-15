@@ -12,7 +12,7 @@ public class MainApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        AddressBookPaneIFC pane = new AddressBookPaneEditButtonsDecorator(new BaseAddressBookPane());
+        AddressBookPaneIFC pane = new AddressBookPaneEditButtonsDecorator(BaseAddressBookPane.getInstance());
         GridPane.setHgrow(pane, Priority.ALWAYS);
         GridPane.setVgrow(pane, Priority.ALWAYS);
         Scene scene = new Scene(pane);
@@ -21,6 +21,19 @@ public class MainApplication extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         primaryStage.setAlwaysOnTop(true);
+
+        for (int i = 0; i < 3; i++) {
+            Stage secondaryStage = new Stage();
+            AddressBookPaneIFC secondaryPane = BaseAddressBookPane.getInstance();
+            if (secondaryPane == null) {
+                System.out.println("Singelton violation. Only 3 panes were created");
+            } else {
+                Scene secondatyScene = new Scene(secondaryPane);
+                secondaryStage.setScene(secondatyScene);
+                secondaryStage.show();
+            }
+
+        }
     }
 }
 

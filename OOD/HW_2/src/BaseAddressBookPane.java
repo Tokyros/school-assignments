@@ -13,6 +13,9 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
 public class BaseAddressBookPane extends AddressBookPaneIFC {
+    private static final int MAX_ALLOWED_INSTANCES = 3;
+    private static int CREATED_INSTANCES = 0;
+
     public static final String MAIN_PAIN_STYLE = "-fx-border-color: grey;"
             + " -fx-border-width: 1;"
             + " -fx-border-style: solid outside ;";
@@ -28,7 +31,16 @@ public class BaseAddressBookPane extends AddressBookPaneIFC {
 
     public EventHandler<ActionEvent> commandBtnEventHandler = ev -> ((Command) ev.getSource()).Execute();
 
-    public BaseAddressBookPane() {
+    public static BaseAddressBookPane getInstance() {
+        if (MAX_ALLOWED_INSTANCES == CREATED_INSTANCES) {
+            return null;
+        }
+
+        CREATED_INSTANCES++;
+        return new BaseAddressBookPane();
+    }
+
+    private BaseAddressBookPane() {
         readAddressBookFile();
 
         this.add(getMainPane(), 0, 0);
