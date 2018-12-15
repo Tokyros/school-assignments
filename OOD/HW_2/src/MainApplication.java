@@ -23,13 +23,13 @@ public class MainApplication extends Application {
         primaryStage.setAlwaysOnTop(true);
 
         for (int i = 0; i < 3; i++) {
-            Stage secondaryStage = new Stage();
             AddressBookPaneIFC secondaryPane = BaseAddressBookPane.getInstance();
             if (secondaryPane == null) {
                 System.out.println("Singelton violation. Only 3 panes were created");
             } else {
-                Scene secondatyScene = new Scene(secondaryPane);
-                secondaryStage.setScene(secondatyScene);
+                Stage secondaryStage = new Stage();
+                Scene secondaryScene = new Scene(secondaryPane);
+                secondaryStage.setScene(secondaryScene);
                 secondaryStage.show();
             }
 
