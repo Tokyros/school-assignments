@@ -14,11 +14,19 @@ class CommandButton extends Button implements Command {
     protected BaseAddressBookPane p;
     protected RandomAccessFile raf;
 
-    public CommandButton(BaseAddressBookPane pane, RandomAccessFile r) {
-        super();
-        p = pane;
-        raf = r;
+    public void setPane(BaseAddressBookPane p) {
+        this.p = p;
     }
+
+    public void setFile(RandomAccessFile file) {
+        this.raf = file;
+    }
+
+//    public CommandButton(BaseAddressBookPane pane, RandomAccessFile r) {
+//        super();
+//        p = pane;
+//        raf = r;
+//    }
 
     public void Execute() {
     }

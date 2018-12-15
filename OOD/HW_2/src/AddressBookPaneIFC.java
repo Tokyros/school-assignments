@@ -1,5 +1,5 @@
-import java.util.ArrayList;
+import javafx.scene.layout.GridPane;
 
-public interface AddressBookPaneIFC {
-    ArrayList<CommandButton> getButtons();
+public abstract class AddressBookPaneIFC extends GridPane {
+    abstract void addButton(CommandButton button);
 }

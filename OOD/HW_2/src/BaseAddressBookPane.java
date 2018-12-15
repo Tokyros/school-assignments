@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
-public class BaseAddressBookPane extends GridPane implements AddressBookPaneIFC {
+public class BaseAddressBookPane extends AddressBookPaneIFC {
     public static final String MAIN_PAIN_STYLE = "-fx-border-color: grey;"
             + " -fx-border-width: 1;"
             + " -fx-border-style: solid outside ;";
@@ -24,6 +24,8 @@ public class BaseAddressBookPane extends GridPane implements AddressBookPaneIFC 
     private TextField stateField = new TextField();
     private TextField zipField = new TextField();
 
+    private FlowPane buttonPane = new FlowPane();
+
     public EventHandler<ActionEvent> commandBtnEventHandler = ev -> ((Command) ev.getSource()).Execute();
 
     public BaseAddressBookPane() {
@@ -31,20 +33,31 @@ public class BaseAddressBookPane extends GridPane implements AddressBookPaneIFC 
 
         this.add(getMainPane(), 0, 0);
 
-        this.add(getButtonPane(), 0, 1);
+        this.add(getButtonsPane(), 0, 1);
 
         this.setVgap(5);
     }
 
-    private FlowPane getButtonPane() {
-        FlowPane buttonPane = new FlowPane();
+    @Override
+    public void addButton(CommandButton button) {
+        button.setOnAction(commandBtnEventHandler);
+        button.setFile(addressBookFile);
+        button.setPane(this);
+        buttonPane.getChildren().add(button);
+    }
+
+    public FlowPane getButtonsPane() {
+        buttonPane = new FlowPane();
         buttonPane.setHgap(5);
 
         buttonPane.setAlignment(Pos.CENTER);
         GridPane.setVgrow(buttonPane, Priority.NEVER);
         GridPane.setHgrow(buttonPane, Priority.ALWAYS);
 
-        buttonPane.getChildren().addAll(getButtons());
+        ArrayList<CommandButton> buttons = getButtons();
+        for (CommandButton button : buttons) {
+            this.addButton(button);
+        }
         return buttonPane;
     }
 
@@ -187,28 +200,19 @@ public class BaseAddressBookPane extends GridPane implements AddressBookPaneIFC 
         return zipField.getText();
     }
 
-    @Override
     public ArrayList<CommandButton> getButtons() {
         ArrayList<CommandButton> buttons = new ArrayList<>();
 
-        AddButton addBtn = new AddButton(this, addressBookFile);
-        addBtn.setOnAction(commandBtnEventHandler);
-        buttons.add(addBtn);
-
-        FirstButton firstBtn = new FirstButton(this, addressBookFile);
-        firstBtn.setOnAction(commandBtnEventHandler);
+        FirstButton firstBtn = new FirstButton();
         buttons.add(firstBtn);
 
-        NextButton nextBtn = new NextButton(this, addressBookFile);
-        nextBtn.setOnAction(commandBtnEventHandler);
+        NextButton nextBtn = new NextButton();
         buttons.add(nextBtn);
 
-        PreviousButton previousBtn = new PreviousButton(this, addressBookFile);
-        previousBtn.setOnAction(commandBtnEventHandler);
+        PreviousButton previousBtn = new PreviousButton();
         buttons.add(previousBtn);
 
-        LastButton lastBtn = new LastButton(this, addressBookFile);
-        lastBtn.setOnAction(commandBtnEventHandler);
+        LastButton lastBtn = new LastButton();
         buttons.add(lastBtn);
 
         return buttons;

@@ -2,8 +2,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 class NextButton extends CommandButton {
-    public NextButton(BaseAddressBookPane pane, RandomAccessFile r) {
-        super(pane, r);
+//    public NextButton(BaseAddressBookPane pane, RandomAccessFile r) {
+//        super(pane, r);
+//        this.setText("Next");
+//    }
+
+    public NextButton() {
         this.setText("Next");
     }
 
