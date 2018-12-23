@@ -22,13 +22,20 @@ class CommandButton extends Button implements Command {
         this.raf = file;
     }
 
-//    public CommandButton(BaseAddressBookPane pane, RandomAccessFile r) {
-//        super();
-//        p = pane;
-//        raf = r;
-//    }
+    protected static AddressBookCaretaker caretaker = new AddressBookCaretaker();
+    protected static AddressBookOriginator originator = new AddressBookOriginator();
 
     public void Execute() {
+    }
+
+    protected String getEntireFile() {
+        try {
+            raf.seek(0);
+            return FixedLengthStringIO.readFixedLengthString((int) raf.length() / 2, raf);
+        } catch (IOException e) {
+            return null;
+        }
+
     }
 
     /**

@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class RedoButton extends CommandButton {
@@ -8,6 +9,18 @@ public class RedoButton extends CommandButton {
 
     @Override
     public void Execute() {
-        System.out.println("REDOING");
+        String redoneState = caretaker.redo();
+        if (redoneState == null) {
+            return;
+        }
+        try {
+            raf.seek(0);
+            FixedLengthStringIO.writeFixedLengthString(redoneState, redoneState.length(), raf);
+            raf.setLength(redoneState.length() * 2);
+            raf.seek(raf.length() - (RECORD_SIZE * 2));
+            readAddress(raf.getFilePointer());
+        } catch (IOException e) {
+            System.out.println("Could not write to file");
+        }
     }
 }

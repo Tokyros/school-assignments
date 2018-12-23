@@ -17,6 +17,8 @@ class NextButton extends CommandButton {
             long currentPosition = raf.getFilePointer();
             if (currentPosition < raf.length())
                 readAddress(currentPosition);
+            else
+                readAddress(currentPosition - (RECORD_SIZE * 2));
         } catch (IOException ex) {
             ex.printStackTrace();
         }

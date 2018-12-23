@@ -25,7 +25,7 @@ public class MainApplication extends Application {
         for (int i = 0; i < 3; i++) {
             AddressBookPaneIFC secondaryPane = BaseAddressBookPane.getInstance();
             if (secondaryPane == null) {
-                System.out.println("Singelton violation. Only 3 panes were created");
+                System.out.println("Singleton violation. Only 3 panes were created");
             } else {
                 Stage secondaryStage = new Stage();
                 Scene secondaryScene = new Scene(secondaryPane);

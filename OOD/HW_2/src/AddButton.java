@@ -1,4 +1,3 @@
-import java.io.RandomAccessFile;
 
 class AddButton extends CommandButton {
 //    public AddButton(BaseAddressBookPane pane, RandomAccessFile r) {
@@ -13,5 +12,8 @@ class AddButton extends CommandButton {
     @Override
     public void Execute() {
         writeAddress();
+
+        originator.setState(getEntireFile());
+        caretaker.add(originator.save());
     }
 }
