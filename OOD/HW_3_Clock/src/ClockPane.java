@@ -79,9 +79,6 @@ public class ClockPane extends Pane {
 
     public void setCurrentTime() {
         CalendarAdapter calendar = new CalendarAdapter();
-        setHour(calendar.getHour());
-        setMinute(calendar.getMinute());
-        setSecond(calendar.getSecond());
         this.hour = calendar.getHour();
         this.minute = calendar.getMinute();
         this.second = calendar.getSecond();
