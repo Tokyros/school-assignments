@@ -2,10 +2,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 class PreviousButton extends CommandButton {
-//    public PreviousButton(BaseAddressBookPane pane, RandomAccessFile r) {
-//        super(pane, r);
-//        this.setText("Previous");
-//    }
 
     public PreviousButton() {
         this.setText("Previous");

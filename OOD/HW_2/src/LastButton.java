@@ -2,10 +2,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 class LastButton extends CommandButton {
-//    public LastButton(BaseAddressBookPane pane, RandomAccessFile r) {
-//        super(pane, r);
-//        this.setText("Last");
-//    }
 
     public LastButton() {
         this.setText("Last");

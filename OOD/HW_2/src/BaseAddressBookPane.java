@@ -48,6 +48,8 @@ public class BaseAddressBookPane extends AddressBookPaneIFC {
         this.add(getButtonsPane(), 0, 1);
 
         this.setVgap(5);
+
+        ((Command)buttonPane.getChildren().get(0)).Execute();
     }
 
     @Override

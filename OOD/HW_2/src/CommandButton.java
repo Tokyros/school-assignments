@@ -28,6 +28,14 @@ class CommandButton extends Button implements Command {
     public void Execute() {
     }
 
+    protected void clearFields() {
+        this.p.SetCity("");
+        this.p.SetName("");
+        this.p.SetState("");
+        this.p.SetStreet("");
+        this.p.SetZip("");
+    }
+
     protected String getEntireFile() {
         try {
             raf.seek(0);

@@ -1,18 +1,9 @@
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 public class UndoButton extends CommandButton {
 
     public UndoButton() {
         this.setText("Undo");
-    }
-
-    private void clearFields() {
-        this.p.SetCity("");
-        this.p.SetName("");
-        this.p.SetState("");
-        this.p.SetStreet("");
-        this.p.SetZip("");
     }
 
     @Override

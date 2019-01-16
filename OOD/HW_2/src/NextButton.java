@@ -2,10 +2,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 class NextButton extends CommandButton {
-//    public NextButton(BaseAddressBookPane pane, RandomAccessFile r) {
-//        super(pane, r);
-//        this.setText("Next");
-//    }
 
     public NextButton() {
         this.setText("Next");
@@ -18,7 +14,11 @@ class NextButton extends CommandButton {
             if (currentPosition < raf.length())
                 readAddress(currentPosition);
             else
-                readAddress(currentPosition - (RECORD_SIZE * 2));
+                if (raf.length() > 0) {
+                    readAddress(raf.length() - (RECORD_SIZE * 2));
+                } else {
+                    clearFields();
+                }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
