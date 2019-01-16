@@ -1,15 +1,19 @@
+import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-public class CalendarAdapter extends GregorianCalendar {
+
+public class CalendarAdapter implements SimpleCalendar {
+    private Calendar calendar = new GregorianCalendar();
+
     public int getHour() {
-        return this.get(HOUR_OF_DAY);
+        return calendar.get(Calendar.HOUR_OF_DAY);
     }
 
     public int getMinute() {
-        return this.get(MINUTE);
+        return calendar.get(Calendar.MINUTE);
     }
 
     public int getSecond() {
-        return this.get(SECOND);
+        return calendar.get(Calendar.SECOND);
     }
 }

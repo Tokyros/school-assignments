@@ -18,8 +18,10 @@ public class Tick extends Thread {
         try {
             while (true) {
                 if (!lock.isLocked()) {
-                    Platform.runLater(() -> clock.setCurrentTime());
-                    new AnnounceTimeOnSeparateThread().start();
+                    Platform.runLater(() -> {
+                        clock.setCurrentTime();
+                        if (new CalendarAdapter().getSecond() == 0) new AnnounceTimeOnSeparateThread().start();
+                    });
                 }
 
                 Thread.sleep(sleepTime);
