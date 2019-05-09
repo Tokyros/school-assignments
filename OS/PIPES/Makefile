@@ -1,5 +1,5 @@
-pipes.out: main.c row col sub-mat
-	gcc main.c -o pipes.out
+pipes: main.c row col sub-mat
+	gcc main.c -o pipes
 
 row: validate_row.c
 	gcc validate_row.c -o row
@@ -11,4 +11,4 @@ sub-mat: validate_sub_matrices.c
 	gcc validate_sub_matrices.c -o sub-mat
 
 clean:
-	rm pipes.out row col sub-mat
+	rm pipes row col sub-mat

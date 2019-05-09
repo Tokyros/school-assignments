@@ -1,5 +1,5 @@
-mmap.out: main.c
-	gcc main.c -o mmap.out
+mmap: main.c
+	gcc main.c -o mmap
 
 clean:
-	rm mmap.out
+	rm mmap

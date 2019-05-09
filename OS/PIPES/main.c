@@ -15,7 +15,6 @@ typedef struct
     bool status;
 } Sudoku;
 
-
 Sudoku readSudokuFile(char *fileName)
 {
     int i, j, currentNum;
@@ -75,6 +74,91 @@ char *convertMatToString(int mat[SUDOKU_LEN][SUDOKU_LEN])
 int main(int argc, char *argv[])
 {
 
+    int pRes[2], p1[2], p2[2], p3[2], pid1, pid2, pid3;
+
+    if (pipe(pRes) < 0)
+    {
+        printf("Error creating pipe!\n");
+        exit(1);
+    }
+
+    if (pipe(p1) < 0)
+    {
+        printf("Error creating pipe!\n");
+        exit(1);
+    }
+
+    if (pipe(p2) < 0)
+    {
+        printf("Error creating pipe!\n");
+        exit(1);
+    }
+
+    if (pipe(p3) < 0)
+    {
+        printf("Error creating pipe!\n");
+        exit(1);
+    }
+
+    if ((pid1 = fork()) > 0)
+    {
+    }
+    else if (pid1 == -1)
+    {
+        printf("Error creating fork!\n");
+        exit(1);
+    }
+    else
+    {
+
+        dup2(pRes[1], 1);
+        dup2(p1[0], 0);
+        char *argv[] = {NULL};
+        char *envp[] = {NULL};
+        execve("./row", argv, envp);
+
+        exit(0);
+    }
+
+    if ((pid2 = fork()) > 0)
+    {
+    }
+    else if (pid2 == -1)
+    {
+        printf("Error creating fork!\n");
+        exit(1);
+    }
+    else
+    {
+
+        char *argv[] = {NULL};
+        char *envp[] = {NULL};
+        dup2(pRes[1], 1);
+        dup2(p2[0], 0);
+        execve("./col", argv, envp);
+
+        exit(0);
+    }
+
+    if ((pid3 = fork()) > 0)
+    {
+    }
+    else if (pid3 == -1)
+    {
+        printf("Error creating fork!\n");
+        exit(1);
+    }
+    else
+    {
+        char *argv[] = {NULL};
+        char *envp[] = {NULL};
+        dup2(pRes[1], 1);
+        dup2(p3[0], 0);
+        execve("./sub-mat", argv, envp);
+
+        exit(0);
+    }
+
     for (int i = 1; i < argc; i++)
     {
 
@@ -88,86 +172,31 @@ int main(int argc, char *argv[])
 
         char *stringMat = convertMatToString(sudoku.matrix);
 
-        int p1[2], pid1, pid2, pid3;
-
-        if (pipe(p1) < 0)
-        {
-            printf("Error creating pipe!\n");
-            exit(1);
-        }
-
-        char *writeChannel = malloc(sizeof(char) * 2);
-        sprintf(writeChannel, "%d\n", p1[1]);
-
-        if ((pid1 = fork()) > 0)
-        {
-        }
-        else if (pid1 == -1)
-        {
-            printf("Error creating fork!\n");
-            exit(1);
-        }
-        else
-        {
-
-            char *argv[] = {stringMat, writeChannel, NULL};
-            char *envp[] = {NULL};
-            execve("./row", argv, envp);
-
-            exit(0);
-        }
-
-        if ((pid2 = fork()) > 0)
-        {
-        }
-        else if (pid2 == -1)
-        {
-            printf("Error creating fork!\n");
-            exit(1);
-        }
-        else
-        {
-
-            char *argv[] = {stringMat, writeChannel, NULL};
-            char *envp[] = {NULL};
-            execve("./col", argv, envp);
-
-            exit(0);
-        }
-
-        if ((pid3 = fork()) > 0)
-        {
-        }
-        else if (pid3 == -1)
-        {
-            printf("Error creating fork!\n");
-            exit(1);
-        }
-        else
-        {
-            char *argv[] = {stringMat, writeChannel, NULL};
-            char *envp[] = {NULL};
-            execve("./sub-mat", argv, envp);
-
-            exit(0);
-        }
-
-        wait(NULL);
-        wait(NULL);
-        wait(NULL);
+        write(p1[1], stringMat, sizeof(char) * SUDOKU_LEN * SUDOKU_LEN);
+        write(p2[1], stringMat, sizeof(char) * SUDOKU_LEN * SUDOKU_LEN);
+        write(p3[1], stringMat, sizeof(char) * SUDOKU_LEN * SUDOKU_LEN);
 
         free(stringMat);
 
-        char res[4] = {0, 0, 0, 0};
-        read(p1[0], res, sizeof(char) * 3);
-
-        if (strcmp(res, "111") == 0)
+        char res;
+        bool correct = true;
+        for (int i = 0; i < 3; i++)
         {
-            printf("%s is legal!\n", fileName);
+            read(pRes[0], &res, sizeof(char));
+
+            if (res == '0')
+            {
+                correct = false;
+                break;
+            }
+        }
+        if (correct)
+        {
+            printf("Sudoku in file %s is legal!\n", fileName);
         }
         else
         {
-            printf("%s is illegal!\n", fileName);
+            printf("Sudoku in file %s is illegal!\n", fileName);
         }
     }
 

@@ -12,6 +12,14 @@ typedef struct
     bool status;
 } Sudoku;
 
+typedef struct
+{
+    bool valid;
+    bool handled[3];
+    bool ready;
+    Sudoku sudoku;
+} Shared;
+
 bool validateRow(Sudoku sudoku, int row)
 {
     int nums[SUDOKU_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -174,40 +182,65 @@ Sudoku getSudokuFromInput()
 
 int main(int argc, char *argv[])
 {
-    for (int i = 1; i < argc; i++)
+    Shared *shared = (Shared *)mmap(NULL, sizeof(Shared), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
+
+    if (!fork())
     {
-        char *fileName = argv[i];
-        bool *validators = (bool *)mmap(NULL, 3 * sizeof(bool), PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0);
-        Sudoku sudoku = readSudokuFile(fileName);
-        if (!sudoku.status)
+        while (true)
         {
-            sudoku = getSudokuFromInput();
+            // Wait for parent process to signal matrix is ready for check
+            while (!shared->ready){}
+            shared->valid = shared->valid * validateAllRows(shared->sudoku);
+            shared->handled[0] = true;
+        }
+    }
+    else if (!fork())
+    {
+        while (true) {
+            // Wait for parent process to signal matrix is ready for check
+            while (!shared->ready)
+            {
+            }
+            shared->valid = shared->valid * validateAllCols(shared->sudoku);
+            shared->handled[1] = true;
+        }
+    }
+    else if (!fork())
+    {
+        while (true)
+        {
+            // Wait for parent process to signal matrix is ready for check
+            while (!shared->ready)
+            {
+            }
+            shared->valid = shared->valid * validateAllSubMatices(shared->sudoku);
+            shared->handled[2] = true;
         }
 
-        if (!fork())
+        return 0;
+    }
+    else
+    {
+        for (int i = 1; i < argc; i++)
         {
-            validators[0] = validateAllRows(sudoku);
-            return 0;
-        }
-        else if (!fork())
-        {
-            validators[1] = validateAllCols(sudoku);
-            return 0;
-        }
-        else if (!fork())
-        {
-            validators[2] = validateAllSubMatices(sudoku);
-            return 0;
-        }
-        else
-        {
-            wait(NULL);
-            wait(NULL);
-            wait(NULL);
-            bool boardValid = validators[0] && validators[1] && validators[2];
+            // Initialise matrix check
+            shared->ready = false;
+            shared->valid = true;
+            shared->handled[0] = false;
+            shared->handled[1] = false;
+            shared->handled[2] = false;
+            // Read one matrix, either from file or input
+            char *fileName = argv[i];
+            Sudoku sudoku = readSudokuFile(fileName);
+            shared->sudoku = sudoku.status ? sudoku : getSudokuFromInput();
+            // shared memory is ready to be processed by child processes
+            shared->ready = true;
+            // Wait for child processes to finish checking matrix
+            while (!(shared->handled[0] * shared->handled[1] * shared->handled[2])){}
+
             if (!sudoku.status)
             {
-                if (!boardValid)
+                if (!shared->valid)
                 {
                     printf("Your board is illegal!\n");
                 }
@@ -218,7 +251,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (!boardValid)
+                if (!shared->valid)
                 {
                     printf("%s is illegal!\n", fileName);
                 }
@@ -228,7 +261,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        munmap(validators, 3 * sizeof(bool));
     }
+    munmap(shared, sizeof(Shared));
     return 0;
 }
