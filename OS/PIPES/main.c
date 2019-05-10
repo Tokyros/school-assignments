@@ -175,12 +175,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    // close(p1[0]);
-    // close(p2[0]);
-    // close(p3[0]);
-    // wait(NULL);
-    // wait(NULL);
-    // wait(NULL);
+    close(p1[0]);
+    close(p2[0]);
+    close(p3[0]);
+    close(pRes[0]);
+    close(pRes[1]);
 
     return 0;
 }
