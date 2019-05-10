@@ -75,88 +75,65 @@ int main(int argc, char *argv[])
 {
 
     int pRes[2], p1[2], p2[2], p3[2], pid1, pid2, pid3;
+    int res;
+    bool correct;
+    int matCount = argc - 1;
 
-    if (pipe(pRes) < 0)
+    if (pipe(pRes) < 0 || pipe(p1) < 0 || pipe(p2) < 0 || pipe(p3) < 0)
     {
         printf("Error creating pipe!\n");
         exit(1);
     }
 
-    if (pipe(p1) < 0)
-    {
-        printf("Error creating pipe!\n");
-        exit(1);
-    }
+    write(p1[1], &matCount, sizeof(int));
+    write(p2[1], &matCount, sizeof(int));
+    write(p3[1], &matCount, sizeof(int));
 
-    if (pipe(p2) < 0)
-    {
-        printf("Error creating pipe!\n");
-        exit(1);
-    }
-
-    if (pipe(p3) < 0)
-    {
-        printf("Error creating pipe!\n");
-        exit(1);
-    }
-
-    if ((pid1 = fork()) > 0)
-    {
-    }
-    else if (pid1 == -1)
+    if ((pid1 = fork()) == -1)
     {
         printf("Error creating fork!\n");
         exit(1);
     }
-    else
+    else if (pid1 == 0)
     {
 
+        close(p1[1]);
         dup2(pRes[1], 1);
         dup2(p1[0], 0);
-        char *argv[] = {NULL};
-        char *envp[] = {NULL};
-        execve("./row", argv, envp);
+        execl("./row", "\0");
 
-        exit(0);
+        exit(1);
     }
 
-    if ((pid2 = fork()) > 0)
-    {
-    }
-    else if (pid2 == -1)
+    if ((pid2 = fork()) == -1)
     {
         printf("Error creating fork!\n");
         exit(1);
     }
-    else
+    else if (pid2 == 0)
     {
 
-        char *argv[] = {NULL};
-        char *envp[] = {NULL};
+        close(p2[1]);
         dup2(pRes[1], 1);
         dup2(p2[0], 0);
-        execve("./col", argv, envp);
+        execl("./col", "\0");
 
-        exit(0);
+        exit(1);
     }
 
-    if ((pid3 = fork()) > 0)
-    {
-    }
-    else if (pid3 == -1)
+    if ((pid3 = fork()) == -1)
     {
         printf("Error creating fork!\n");
         exit(1);
     }
-    else
+    else if (pid3 == 0)
     {
-        char *argv[] = {NULL};
-        char *envp[] = {NULL};
+        close(p3[1]);
         dup2(pRes[1], 1);
         dup2(p3[0], 0);
-        execve("./sub-mat", argv, envp);
+        execl("./sub-mat", NULL);
 
-        exit(0);
+        exit(1);
     }
 
     for (int i = 1; i < argc; i++)
@@ -178,16 +155,14 @@ int main(int argc, char *argv[])
 
         free(stringMat);
 
-        char res;
-        bool correct = true;
+        correct = true;
         for (int i = 0; i < 3; i++)
         {
-            read(pRes[0], &res, sizeof(char));
+            read(pRes[0], &res, sizeof(int));
 
-            if (res == '0')
+            if (res == 0)
             {
                 correct = false;
-                break;
             }
         }
         if (correct)
@@ -199,6 +174,13 @@ int main(int argc, char *argv[])
             printf("Sudoku in file %s is illegal!\n", fileName);
         }
     }
+
+    // close(p1[0]);
+    // close(p2[0]);
+    // close(p3[0]);
+    // wait(NULL);
+    // wait(NULL);
+    // wait(NULL);
 
     return 0;
 }

@@ -69,8 +69,12 @@ int *getSudokuFromString(char st[SUDOKU_LEN * SUDOKU_LEN])
 int main(int argc, char *argv[])
 {
     char mat[SUDOKU_LEN * SUDOKU_LEN];
-    while (read(STDIN_FILENO, mat, sizeof(char) * SUDOKU_LEN * SUDOKU_LEN))
+    int matCount;
+    read(STDIN_FILENO, &matCount, sizeof(int));
+
+    for (int i = 0; i < matCount; i++)
     {
+        read(STDIN_FILENO, mat, sizeof(char) * SUDOKU_LEN * SUDOKU_LEN);
         int res = validateAllSubMatrices(getSudokuFromString(mat));
         write(STDOUT_FILENO, &res, sizeof(int));
     }
