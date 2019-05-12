@@ -1,3 +1,9 @@
+v1: pipes.c row col sub-mat
+	gcc pipes.c -o v1
+
+v2: mmap.c
+	gcc mmap.c -o v2
+
 pipes: main.c row col sub-mat
 	gcc main.c -o pipes
 
@@ -11,4 +17,4 @@ sub-mat: validate_sub_matrices.c
 	gcc validate_sub_matrices.c -o sub-mat
 
 clean:
-	rm pipes row col sub-mat
+	rm v1 v2 row col sub-mat

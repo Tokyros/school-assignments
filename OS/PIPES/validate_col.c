@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <ctype.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-
-#define SUDOKU_LEN 9
+#include "validate_col.h"
 
 bool validateCol(const int *sudoku)
 {
