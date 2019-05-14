@@ -11,18 +11,20 @@
 
 #define NUM_THREADS 27
 #define SUDOKU_LEN  9
-#define FILE_NAME "sudoku.txt"
 
+enum TASKS { ROW, COL, SUB };
 typedef struct {
     int matrix[SUDOKU_LEN][SUDOKU_LEN];
     bool status;
 } Sudoku;
 
 typedef struct {
-    Sudoku sudoku;
     int indexToCheck;
-    int* res;
+    enum TASKS taskType;
 } ChekingArgs;
+
+Sudoku sudoku;
+int res[27];
 
 bool validateRow(Sudoku sudoku, int row) {
     int nums[SUDOKU_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -82,10 +84,10 @@ bool validateSubMatrix(Sudoku sudoku, int row, int col) {
     return true;
 }
 
-Sudoku readSudokuFile() {
+Sudoku readSudokuFile(char* fileName) {
     int i, j, currentNum;
     Sudoku board;
-    FILE* file = fopen(FILE_NAME, "r");
+    FILE* file = fopen(fileName, "r");
 
     if (!file) {
         printf("Invalid filename!\n");
@@ -117,65 +119,47 @@ Sudoku getSudokuFromInput() {
     return board;
 }
 
-void *rowsCheckingThread(void *vargp) {
+void *threadFunction(void *vargp) {
     ChekingArgs* rca = (ChekingArgs*) vargp;
-    bool res = validateRow(rca->sudoku, rca->indexToCheck);
-    rca->res[rca->indexToCheck] = res;
-    return NULL;
-}
-
-void *colsCheckingThread(void *vargp) {
-    ChekingArgs* rca = (ChekingArgs*) vargp;
-    bool res = validateCol(rca->sudoku, rca->indexToCheck);
-    rca->res[9 + rca->indexToCheck] = res;
-    return NULL;
-}
-
-void *subMatricesCheckingThread(void *vargp) {
-    ChekingArgs* rca = (ChekingArgs*) vargp;
-    int row = rca->indexToCheck / 3 * 3;
-    int col = rca->indexToCheck % 3 * 3;
-    bool res = validateSubMatrix(rca->sudoku, row, col);
-    rca->res[18 + rca->indexToCheck] = res;
+    
+    switch (rca->taskType)
+    {
+    case ROW:
+        res[rca->indexToCheck] = validateRow(sudoku, rca->indexToCheck);
+        break;
+    
+    case COL:
+         res[9 + rca->indexToCheck] = validateCol(sudoku, rca->indexToCheck);
+        break;
+    
+    case SUB:
+        res[18 + rca->indexToCheck] = validateSubMatrix(sudoku, rca->indexToCheck / 3 * 3, rca->indexToCheck % 3 * 3);
+        break;
+    
+    default:
+        break;
+    }
+    
+    
     return NULL;
 }
 
    
-int main() {
-    Sudoku sudoku = readSudokuFile();
+int main(int argc, char* argv[]) {
+    sudoku = readSudokuFile(argv[1]);
     if (!sudoku.status) {
         sudoku = getSudokuFromInput();
     }
 
     pthread_t threads[NUM_THREADS];
-    int res[NUM_THREADS];
-    ChekingArgs* args[27];
+    ChekingArgs* args[NUM_THREADS];
 
-    for (int i = 0; i < NUM_THREADS / 3; i++) {
+    for (int i = 0; i < NUM_THREADS; i++) {
         ChekingArgs* checkingArgs = malloc(sizeof(ChekingArgs));
-        checkingArgs->sudoku = sudoku;
-        checkingArgs->indexToCheck = i;
-        checkingArgs->res = res;
+        checkingArgs->indexToCheck = i % 9;
+        checkingArgs->taskType = i / 9 == 0 ? ROW : i / 9 == 1 ? COL : SUB;
         args[i] = checkingArgs;
-        pthread_create(&threads[i], NULL, rowsCheckingThread, (void*) checkingArgs);
-    }
-
-    for (int i = 0; i < NUM_THREADS / 3; i++) {
-        ChekingArgs* checkingArgs = malloc(sizeof(ChekingArgs));
-        checkingArgs->sudoku = sudoku;
-        checkingArgs->indexToCheck = i;
-        checkingArgs->res = res;
-        args[i] = checkingArgs;
-        pthread_create(&threads[i], NULL, colsCheckingThread, (void*) checkingArgs);
-    }
-
-    for (int i = 0; i < NUM_THREADS / 3; i++) {
-        ChekingArgs* checkingArgs = malloc(sizeof(ChekingArgs));
-        checkingArgs->sudoku = sudoku;
-        checkingArgs->indexToCheck = i;
-        checkingArgs->res = res;
-        args[i] = checkingArgs;
-        pthread_create(&threads[i], NULL, subMatricesCheckingThread, (void*) checkingArgs);
+        pthread_create(&threads[i], NULL, threadFunction, (void*) checkingArgs);
     }
 
     for(int i = 0; i < NUM_THREADS; i++)
@@ -186,11 +170,11 @@ int main() {
 
     for (int i = 0; i < NUM_THREADS; i++) {
         if (!res[i]) {
-            printf("The sudoku was invalid!\n");
+            printf("solution is not legal\n");
             return 0;
         }
     }
 
-    printf("The sudoku was valid\n");
+    printf("solution is legal\n");
     return 0;
 }
