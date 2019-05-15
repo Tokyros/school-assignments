@@ -3,8 +3,10 @@
 pthread_mutex_t taskLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t resLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t condition = PTHREAD_COND_INITIALIZER; 
+pthread_mutex_t conditionWaitMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int res = 1;
+static int ready = 0;
 
 bool validateRow(Sudoku sudoku, int row) {
     int nums[SUDOKU_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -136,7 +138,10 @@ void *performRandomTask(void *vargp) {
     pthread_mutex_unlock(&resLock); 
     
     if (task == NUMBER_OF_TASKS - 1) {
+        pthread_mutex_lock(&conditionWaitMutex);
+        ready = 1;
         pthread_cond_signal(&condition); 
+        pthread_mutex_unlock(&conditionWaitMutex);
     }
 
     return NULL;
@@ -162,6 +167,13 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_create(&threads[i], NULL, performRandomTask, (void*) &tasks);
     }
+
+    pthread_cond_init(&condition, NULL);
+    pthread_mutex_lock(&conditionWaitMutex);
+    while (ready == 0) {
+        pthread_cond_wait(&condition, &conditionWaitMutex);
+    }
+    pthread_mutex_unlock(&conditionWaitMutex);
 
     for(int i = 0; i < NUM_THREADS; i++)
     {
