@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define SUDOKU_LEN 9
-#define NUM_THREADS 27
+#define NUM_THREADS 10
 #define NUMBER_OF_TASKS 27
 
 typedef struct {
@@ -16,7 +16,8 @@ typedef struct {
 
 typedef struct {
     Sudoku sudoku;
-    int tasks[27];
+    int tasks[NUMBER_OF_TASKS];
+    int lastTakenTask;
 } Tasks;
 
 bool validateRow(Sudoku sudoku, int row);

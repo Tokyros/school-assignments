@@ -104,38 +104,29 @@ Sudoku getSudokuFromInput() {
 
 void *performRandomTask(void *vargp) {
     Tasks* tasks = (Tasks*) vargp;
+    int task;
 
-    pthread_mutex_lock(&taskLock); 
+    while (tasks->lastTakenTask < NUMBER_OF_TASKS - 1) {
+        pthread_mutex_lock(&taskLock);
+        task = ++tasks->lastTakenTask;
+        pthread_mutex_unlock(&taskLock); 
 
-    int task, row, col;
+        pthread_mutex_lock(&resLock); 
 
-    for (int i = 0; i < NUMBER_OF_TASKS; i++) {
-        if (tasks->tasks[i] > 0) {
-            task = tasks->tasks[i];
-            tasks->tasks[i] = 0;
-            break;
+        switch (task / 9) {
+            case 0:
+                res *= validateSubMatrix(tasks->sudoku, task / 3 * 3, task % 3 * 3);
+                break;
+            case 1:
+                res *= validateRow(tasks->sudoku, task % 9);
+                break;
+            case 2:
+                res *= validateCol(tasks->sudoku, task % 9);
+                break;
         }
+
+        pthread_mutex_unlock(&resLock); 
     }
-
-    pthread_mutex_unlock(&taskLock); 
-
-    pthread_mutex_lock(&resLock); 
-
-    switch (task / 9) {
-        case 0:
-            row = task / 3 * 3;
-            col = task % 3 * 3;
-            res *= validateSubMatrix(tasks->sudoku, row, col);
-            break;
-        case 1:
-            res *= validateRow(tasks->sudoku, task % 9);
-            break;
-        case 2:
-            res *= validateCol(tasks->sudoku, task % 9);
-            break;
-    }
-
-    pthread_mutex_unlock(&resLock); 
     
     if (task == NUMBER_OF_TASKS - 1) {
         pthread_mutex_lock(&conditionWaitMutex);
