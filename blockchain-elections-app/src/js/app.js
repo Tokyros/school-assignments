@@ -178,6 +178,7 @@ App = {
         }
       } else {
         windowNotSetWarning.show();
+        $('#vote-form').hide();
       }
     }).catch(function(error) {
       console.warn(error);
