@@ -1,0 +1,22 @@
+.app-container {
+    background: white;
+    border: 1px solid black;
+    border-radius: 5px;
+    box-shadow: aliceblue;
+    box-shadow: 3px 3px 7px 0px black;
+    margin: 15px 0;
+}
+
+#admin-dashboard {
+    display: block;
+    border: 1px solid #675b5ba6;
+    padding: 0 14px 14px 14px;
+    border-radius: 5px;
+}
+
+.winner {
+    background-color: #4fce4f;
+    color: white;
+    box-shadow: 0 0 4px 5px black;
+}
+
