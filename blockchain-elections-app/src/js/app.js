@@ -77,6 +77,7 @@ App = {
     var votingDisabledWarning = $('#voting-disabled-warning');
     const votingEndedWarning = $('#voting-ended-message');
     const windowNotSetWarning = $('#window-not-set-warning');
+    const voterNotAllowedWarning = $('#voter-not-allowed-warning');
 
     loader.show();
     content.hide();
@@ -84,6 +85,7 @@ App = {
     votingDisabledWarning.hide();
     votingEndedWarning.hide();
     windowNotSetWarning.hide();
+    voterNotAllowedWarning.hide();
 
     $('#submit-voters-file-input').on('change', readFile);
 
@@ -179,6 +181,12 @@ App = {
       } else {
         windowNotSetWarning.show();
         $('#vote-form').hide();
+      }
+      return instance.allowedVoters(App.account)
+    }).then((userAllowedToVote) => {
+      if (!userAllowedToVote) {
+       $("#vote-form").hide();
+       voterNotAllowedWarning.show();
       }
     }).catch(function(error) {
       console.warn(error);

@@ -34,6 +34,7 @@ contract Election {
     constructor(KaiCoin _tokensContract) public {
         tokensContract = _tokensContract;
         owner = msg.sender;
+        allowedVoters[msg.sender] = true;
         addCandidate("Bibi");
         addCandidate("Gantz");
     }
@@ -55,6 +56,9 @@ contract Election {
     }
 
     function vote(uint256 _candidateId) public {
+        // require that the voter is listed on the allowed voters list
+        require(allowedVoters[msg.sender], "Not Allowed");
+
         // require that they haven't voted before
         require(!voters[msg.sender]);
 
