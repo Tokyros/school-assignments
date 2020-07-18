@@ -1,4 +1,99 @@
 let db;
+let playerOne;
+let playerTwo;
+const fullDeck = [
+ 2,
+ 2,
+ 2,
+ 2,
+ 3,
+ 3,
+ 3,
+ 3,
+ 4,
+ 4,
+ 4,
+ 4,
+ 5,
+ 5,
+ 5,
+ 5,
+ 6,
+ 6,
+ 6,
+ 6,
+ 7,
+ 7,
+ 7,
+ 7,
+ 8,
+ 8,
+ 8,
+ 8,
+ 9,
+ 9,
+ 9,
+ 9,
+ 10,
+ 10,
+ 10,
+ 10,
+ 11,
+ 11,
+ 11,
+ 11,
+ 12,
+ 12,
+ 12,
+ 12,
+ 13,
+ 13,
+ 13,
+ 13,
+ 14,
+ 14,
+ 14,
+ 14,
+ 15,
+ 15
+]
+
+function setForm(player) {
+    player.submit((event) => {
+        $.ajax({
+            type: "POST",
+            url: player.attr('action'),
+            data: player.serialize(),
+            dataType: 'json',
+            encode: true,
+            success: (data) => { 
+                if (data) {
+                    const currentPlayer = JSON.parse(data).posts[0].author
+                    if (true) {
+                        player.replaceWith(`<h3 class="player-ready">${currentPlayer.name} is Ready</h3>`);
+                        if (!playerOne && !playerTwo) {
+                            playerOne = currentPlayer.name;
+                        } else if (playerOne) {
+                            playerTwo = currentPlayer.name;
+                        } else if (playerTwo) {
+                            playerOne = currentPlayer.name;
+                        }
+                    }
+                }
+            },
+            error: ( xhr, status, err ) => {
+                alert( "Sorry, there was a problem!" );
+                console.log( "Error: " + err );
+                console.log( "Status: " + status );
+                console.dir( xhr );
+            }
+        });
+        event.preventDefault();
+    });
+}
+
+setForm($('#player1'));
+setForm($('#player2'));
 
 if (window.openDatabase) {
     db = openDatabase("memory-game", "0.1", "Memory game database", 1024 * 1024);
@@ -111,10 +206,10 @@ function createBoard(boardSize) {
 class Player {
     static playerCount = 0;
 
-    constructor(playerName) {
+    constructor(playerName, deck) {
         this.playerName = playerName;
-        this.score = 0;
         this.playerNumber = ++Player.playerCount;
+        this.deck = deck;
         this.initializeElement();
     }
 
@@ -131,13 +226,18 @@ class Player {
         this.element.append(this.playerNameElement);
     }
 
-    incrementScore() {
-        this.score++;
+    addCards(cards) {
+        this.deck = [...this.deck, ...cards];
+        this.updateScore();
+    }
+
+    playCard() {
+        this.chosenCard = this.deck.shift();
         this.updateScore();
     }
 
     updateScore() {
-        this.playerNameElement.text(`${this.playerName} score: ${this.score}`);
+        this.playerNameElement.text(`${this.playerName} score: ${this.deck.length}`);
     }
 }
 
@@ -294,8 +394,8 @@ class Modal {
 }
 
 class Game {
-    constructor(boardSize, player1, player2) {
-        this.board = new Board(boardSize, (result) => this.onFlipCell(result), () => this.getCurrentPlayer());
+    constructor(player1, player2) {
+        this.war = new War(player1, player2);
         this.player1 = player1;
         this.player2 = player2;
         this.setCurrentPlayer(player1);
@@ -347,11 +447,82 @@ class Game {
             this.player1.element,
             this.player2.element,
         )
-        $('.game-board').html(this.board.render())
+        $('.game-board').html($(this.war.render()));
+    }
+}
+
+class Deck {
+    constructor(player, onCardPlayed) {
+        this.player = player;
+        this.onCardPlayed = onCardPlayed;
     }
 
-    static createGame(gridSize) {
-        return new Game(createBoard(gridSize))
+    render() {
+        this.element = $('<div></div>');
+        this.element.addClass('deck');
+        this.element.text(this.player.playerName);
+        this.element.click(() => this.onCardPlayed(this.player));
+        return this.element;
+    }
+}
+
+class War {
+    constructor(player1, player2) {
+        this.player1 = player1;
+        this.player2 = player2;
+        this.player1Deck = new Deck(player1, this.onCardPlayed);
+        this.player2Deck = new Deck(player2, this.onCardPlayed);
+    }
+
+    onCardPlayed = (player) => {
+        if (player.playerNumber === 1) {
+            $('.pl1').text(this.player1.deck[0]);
+            this.player1.playCard();
+        } else {
+            $('.pl2').text(this.player2.deck[0]);
+            this.player2.playCard();
+        }
+        if (this.player1.chosenCard && this.player2.chosenCard) {
+            if (this.player1.chosenCard > this.player2.chosenCard) {
+                this.player2.addCards([this.player1.chosenCard, this.player2.chosenCard]);
+            } else if (this.player1.chosenCard < this.player2.chosenCard) {
+                this.player1.addCards([this.player1.chosenCard, this.player2.chosenCard]);
+            } else {
+                console.log('WAR');
+            }
+            this.player1.chosenCard = null;
+            this.player2.chosenCard = null;
+            setTimeout(() => this.clearFields(), 700);
+        }
+    }
+
+    clearFields() {
+        $('.pl1').text('');
+        $('.pl2').text('');
+    }
+
+    renderField() {
+        const field = $('<div></div>');
+        field.addClass('decks');
+        field.append('<div class="deck pl1"></div>');
+        field.append('<div class="deck pl2"></div>');
+        return field;
+    }
+
+    renderDecks() {
+        const decks = $('<div></div>');
+        decks.addClass('decks');
+        decks.append(this.player1Deck.render());
+        decks.append(this.player2Deck.render());
+        return decks;
+    }
+
+    render() {
+        this.element = $('<div></div>');
+        this.element.addClass('container');
+        this.element.append(this.renderField());
+        this.element.append(this.renderDecks());
+        return this.element;
     }
 }
 
@@ -370,15 +541,17 @@ function showGameSetup() {
     $(".game-board").hide();
 }
 
-function startGame(boardSize, player1Name, player2Name) {
-    persistGameConfig({gridSize: boardSize, player1: player1Name, player2: player2Name});
-    if (boardSize >= 3) {
+function startGame() {
+    const deck = shuffle(fullDeck);
+    const player1Deck = deck.slice(0, deck.length / 2);
+    const player2Deck = deck.slice(deck.length / 2);
+    if (playerOne && playerTwo) {
         showGame();
-        const game = new Game(boardSize, new Player($('#player1-name-input').val()), new Player($("#player2-name-input").val()));
+        const game = new Game(new Player(playerOne, player1Deck), new Player(playerTwo, player2Deck));
         game.render();
         $(".game-setup").hide()
         $('.current-player').show()
     } else {
-        alert('Board size must be at least 3!')
+        alert('All players must be ready!')
     }
 }
