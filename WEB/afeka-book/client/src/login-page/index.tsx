@@ -1,13 +1,14 @@
 import * as React from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { LoginData } from '../model/auth';
-import { APIContext } from '../App';
+import { APIContext, AuthContext } from '../App';
 import { AxiosError } from 'axios';
 
 export type LoginPageProps = {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({}) => {
+    const {setUser} = React.useContext(AuthContext);
     const [email, setUserName] = React.useState('');
     const [password, setPassword] = React.useState('');
     const api = React.useContext(APIContext);
@@ -18,12 +19,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({}) => {
     }
 
     const onLogin = () => {
-        return api.auth.login({email, password});
+        return api.auth.login({email, password}).then((user) => {
+            setUser(user);
+        });
     }
-
-    React.useEffect(() => {
-        api.auth.checkLogin().then(onLoginSuccess)
-    }, []);
     
     const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         // Prevents form from sending request to server

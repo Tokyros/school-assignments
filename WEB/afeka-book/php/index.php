@@ -22,17 +22,17 @@
         <div class="game-details-wrapper">
             <div class="forms">
                 <form id="player1" class="login-form" action="login.php" method="POST">
-                    <label for="player1-email">Player 1 Email:</label>
-                    <input type="email" name="player1-email">
-                    <label for="player1-password">Player 1 Password:</label>
-                    <input type="password" name="player1-password">
+                    <label for="email">Player 1 Email:</label>
+                    <input type="email" name="email">
+                    <label for="password">Player 1 Password:</label>
+                    <input type="password" name="password">
                     <input class="submit-button" type="submit">
                 </form>
                 <form id="player2" class="login-form" action="login.php" method="POST">
-                    <label for="player2-email">Player 2 Email:</label>
-                    <input type="email" name="player2-email">
-                    <label for="player2-password">Player 2 Password:</label>
-                    <input type="password" name="player2-password">
+                    <label for="email">Player 2 Email:</label>
+                    <input type="email" name="email">
+                    <label for="password">Player 2 Password:</label>
+                    <input type="password" name="password">
                     <input class="submit-button" type="submit">
                 </form>
             </div>

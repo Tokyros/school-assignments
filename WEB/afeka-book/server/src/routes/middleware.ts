@@ -36,24 +36,19 @@ export const adminMW = async (req: Request, res: Response, next: NextFunction) =
 };
 
 export const JWTMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        // Get json-web-token
-        const jwt = req.signedCookies[cookieProps.key];
-        if (!jwt) {
-            throw Error('JWT not present in signed cookie.');
-        }
-        // Make sure user role is an admin
-        const clientData = await jwtService.decodeJwt(jwt);
-        const user = (await userDao.getAll()).find((user) => user.id === clientData.id);
-        if (!user) {
-            throw Error('USER NOT FOUND');
-        }
-
-        req.body.user = user;
+    // Get json-web-token
+    const jwt = req.signedCookies[cookieProps.key];
+    if (!jwt) {
         next();
-    } catch (err) {
-        return res.status(UNAUTHORIZED).json({
-            error: err.message,
-        });
+        return;
     }
+    // Make sure user role is an admin
+    const clientData = await jwtService.decodeJwt(jwt);
+    const user = (await userDao.getAll()).find((user) => user.id === clientData.id);
+    // if (!user) {
+    //     throw Error('USER NOT FOUND');
+    // }
+
+    req.body.user = user;
+    next();
 }

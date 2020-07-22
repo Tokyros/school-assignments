@@ -1,15 +1,18 @@
 import bcrypt from 'bcrypt';
 import { Request, Response, Router } from 'express';
-import { BAD_REQUEST, OK, UNAUTHORIZED, CONFLICT } from 'http-status-codes';
+import { BAD_REQUEST, OK, UNAUTHORIZED, CONFLICT, NOT_FOUND } from 'http-status-codes';
 
 import UserDao from '@daos/User/UserDao.mock';
 import { JwtService } from '@shared/JwtService';
 import { paramMissingError, loginFailedErr, cookieProps, userExistsError, pwdSaltRounds } from '@shared/constants';
-import { User, UserRoles } from '@entities/User';
+import { User, UserRoles, IUser } from '@entities/User';
 import { getRandomInt } from '@shared/functions';
+import { JWTMiddleware } from './middleware';
 
 
 const router = Router();
+router.use(JWTMiddleware);
+
 const userDao = new UserDao();
 const jwtService = new JwtService();
 
@@ -41,6 +44,27 @@ router.post('/signup', async (req: Request, res: Response) => {
     return res.status(OK).end();
 })
 
+const getUserWithFriends = (user: IUser, allUsers: IUser[]) => {
+    return {
+        ...user,
+        friends: allUsers.filter((oneUser) => user?.friendIds.includes(oneUser.id))
+    }
+}
+
+router.get('/me', async (req: Request, res: Response) => {
+    if (!req.body.user) {
+        return res.status(UNAUTHORIZED).end();
+    }
+    const userEmail = req.body.user.email;
+
+    const user = await userDao.getOne(userEmail);
+    if (!user) {
+        return res.status(NOT_FOUND).end();
+    }
+    const allUsers = await userDao.getAll();
+    return res.status(OK).json(getUserWithFriends(user, allUsers));
+});
+
 router.post('/login', async (req: Request, res: Response) => {
     // Check email and password present
     const { email, password } = req.body;
@@ -71,7 +95,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const { key, options } = cookieProps;
     res.cookie(key, jwt, options);
     // Return
-    return res.status(OK).end();
+    return res.status(OK).json(getUserWithFriends(user, await userDao.getAll()));
 });
 
 
@@ -80,7 +104,6 @@ router.post('/login', async (req: Request, res: Response) => {
  ******************************************************************************/
 
 router.get('/logout', async (req: Request, res: Response) => {
-    console.log('here')
     const { key, options } = cookieProps;
     res.clearCookie(key, options);
     return res.status(OK).end();

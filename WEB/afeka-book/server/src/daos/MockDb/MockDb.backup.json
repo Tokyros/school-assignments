@@ -3,16 +3,19 @@
     {
       "name": "Sean Maxwell",
       "email": "sean.maxwell@gmail.com",
+      "friendIds": [],
       "id": 159123164363
     },
     {
       "name": "Gordan Freeman",
       "email": "gordan.freeman@halflife.com",
+      "friendIds": [],
       "id": 906524522143
     },
     {
       "name": "John Smith",
       "email": "jsmith@yahoo.com",
+      "friendIds": [],
       "id": 357437875835
     }
   ],

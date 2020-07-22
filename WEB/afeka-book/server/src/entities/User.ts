@@ -9,6 +9,7 @@ export interface IUser {
     email: string;
     pwdHash: string;
     role: UserRoles;
+    friendIds: number[];
 }
 
 export class User implements IUser {
@@ -18,6 +19,7 @@ export class User implements IUser {
     public email: string;
     public role: UserRoles;
     public pwdHash: string;
+    public friendIds: number[];
 
 
     constructor(
@@ -26,6 +28,7 @@ export class User implements IUser {
         role?: UserRoles,
         pwdHash?: string,
         id?: number,
+        friendIds?: number[]
     ) {
         if (typeof nameOrUser === 'string' || typeof nameOrUser === 'undefined') {
             this.name = nameOrUser || '';
@@ -33,12 +36,14 @@ export class User implements IUser {
             this.role = role || UserRoles.Standard;
             this.pwdHash = pwdHash || '';
             this.id = id || -1;
+            this.friendIds = friendIds || [];
         } else {
             this.name = nameOrUser.name;
             this.email = nameOrUser.email;
             this.role = nameOrUser.role;
             this.pwdHash = nameOrUser.pwdHash;
             this.id = nameOrUser.id;
+            this.friendIds = nameOrUser.friendIds;
         }
     }
 }

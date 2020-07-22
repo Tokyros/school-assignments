@@ -60,15 +60,22 @@ const fullDeck = [
 
 function setForm(player) {
     player.submit((event) => {
+        console.log('here')
+        event.preventDefault();
+
         $.ajax({
             type: "POST",
             url: player.attr('action'),
-            data: player.serialize(),
+            data: {
+                email: player.find('input[type="email"]').val(),
+                password: player.find('input[type="password"]').val(),
+            },
             dataType: 'json',
             encode: true,
             success: (data) => { 
                 if (data) {
-                    const currentPlayer = JSON.parse(data).posts[0].author
+                    console.log(data);
+                    const currentPlayer = JSON.parse(data)
                     if (true) {
                         player.replaceWith(`<h3 class="player-ready">${currentPlayer.name} is Ready</h3>`);
                         if (!playerOne && !playerTwo) {
@@ -88,7 +95,6 @@ function setForm(player) {
                 console.dir( xhr );
             }
         });
-        event.preventDefault();
     });
 }
 

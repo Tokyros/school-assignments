@@ -1,16 +1,18 @@
 import { Request, Response, Router } from 'express';
-import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
+import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED, CONFLICT, NOT_FOUND } from 'http-status-codes';
 import { ParamsDictionary } from 'express-serve-static-core';
 
 import UserDao from '@daos/User/UserDao.mock';
-import { paramMissingError, pwdSaltRounds } from '@shared/constants';
-import { adminMW } from './middleware';
-import { UserRoles, User } from '@entities/User';
+import { paramMissingError, pwdSaltRounds, userExistsError } from '@shared/constants';
+import { adminMW, JWTMiddleware } from './middleware';
+import { UserRoles, User, IUser } from '@entities/User';
 import bcrypt from 'bcrypt';
+import { NOTFOUND } from 'dns';
 
 
 // Init shared
 const router = Router();
+router.use(JWTMiddleware);
 const userDao = new UserDao();
 
 
@@ -19,9 +21,47 @@ const userDao = new UserDao();
  ******************************************************************************/
 
 router.get('/all', async (req: Request, res: Response) => {
+    if (!req.body.user) {
+        return res.status(UNAUTHORIZED).json({error: 'You must login to search users'});
+    }
     const users = await userDao.getAll();
     return res.status(OK).json({users});
 });
+
+router.post('/add-friend', async (req: Request, res: Response) => {
+    if (!req.body.user) {
+        return res.status(UNAUTHORIZED).json({error: 'You must login to add a friend'});
+    }
+
+    const friendEmail = req.body.friendEmail;
+    const currentUser: IUser = req.body.user;
+    const friend = await userDao.getOne(friendEmail);
+
+    if (friend) {
+        const friendAlreadyAdded = currentUser.friendIds.includes(friend.id);
+        if (friendAlreadyAdded) {
+            return res.status(CONFLICT).json({message: 'Friend is already added'});
+        }
+
+        const updatedUser = { ...currentUser, friendIds: [...currentUser.friendIds, friend.id] };
+        const updatedFriend = {...friend, friendIds: [...friend.friendIds, currentUser.id]}
+        await userDao.update(updatedUser);
+        await userDao.update(updatedFriend);
+        res.status(OK).json({friends: (await userDao.getAll()).filter((user) => updatedUser.friendIds.includes(user.id))});
+    } else {
+        return res.status(NOT_FOUND).json({message: `No user exists with email ${friendEmail}`});
+    }
+})
+
+router.get('/friends', async (req: Request, res: Response) => {
+    if (!req.body.user) {
+        return res.status(UNAUTHORIZED).json({error: 'You must login to get friends list'});
+    }
+
+    const currentUser: IUser = req.body.user;
+    const allFriends = (await userDao.getAll()).filter((user) => currentUser.friendIds.includes(user.id));
+    return res.status(200).json(allFriends);
+})
 
 
 /******************************************************************************
