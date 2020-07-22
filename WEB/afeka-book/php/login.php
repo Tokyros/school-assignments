@@ -22,6 +22,6 @@
     if ($result === FALSE) { 
         echo "OH NO";
     } else {
-        print_r($result['result']);
+        print_r(json_encode($result['result']));
     }    
 ?>
