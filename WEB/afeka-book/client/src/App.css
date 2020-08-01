@@ -1,5 +1,31 @@
+html, body, #root {
+  height: 100%;
+}
+
 .App {
   text-align: center;
+  height: 100%;
+  background-color: #2e2e3cd1;
+  display: flex;
+  justify-content: center;
+  color: white;
+}
+
+.App button, .App input[type="submit"] {
+    margin: 5px;
+    border-radius: 5px;
+    background: #5353a9;
+    color: white;
+    padding: 3px 14px;
+    font-size: 14px;
+    font-weight: 900;
+    border: 1px solid black;
+    box-shadow: 2px 2px 7px black;
+    cursor: pointer;
+}
+
+.App button:hover {
+  background-color: green;
 }
 
 .App-logo {
@@ -36,3 +62,7 @@
     transform: rotate(360deg);
   }
 }
+
+@import './components/style.css';
+@import './login-page/style.css';
+@import './feed-page/style.css';

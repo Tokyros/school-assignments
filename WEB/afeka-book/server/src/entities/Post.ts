@@ -5,6 +5,7 @@ export interface IPost {
     author: User;
     content: string;
     imageUrls: string[];
+    creationDate: number;
 }
 
 export class Post implements IPost {
@@ -14,6 +15,7 @@ export class Post implements IPost {
         public author: User,
         public content: string,
         public imageUrls: string[],
+        public creationDate: number,
     ) {
         
     }

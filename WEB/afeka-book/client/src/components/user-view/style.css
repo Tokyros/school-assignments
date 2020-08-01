@@ -1,0 +1,17 @@
+.user-view {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 10px;
+    border-bottom: 1px solid white;
+}
+  
+.user-view .name {
+    margin-right: 5px;
+    display: flex;
+    align-items: center;
+}
+  
+.user-view .status {
+    margin-right: 5px;
+}

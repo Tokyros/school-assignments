@@ -58,6 +58,8 @@ const viewsDir = path.join(__dirname, 'views');
 app.set('views', viewsDir);
 const staticDir = path.join(__dirname, 'public', 'app');
 app.use(express.static(staticDir));
+export const IMAGES_DIR = path.join(__dirname, 'public', 'image-uploads');
+app.use(express.static(IMAGES_DIR));
 
 app.get('/', (_: Request, res: Response) => {
     res.sendFile('index.html');

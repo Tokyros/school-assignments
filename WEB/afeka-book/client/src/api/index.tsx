@@ -16,7 +16,7 @@ export type API = {
     },
     feed: {
         getAllPosts: () => Promise<Post[]>;
-        addPost: (post: {postContent: string}) => Promise<Post>;
+        addPost: (post: {postContent: string, imageIds: string[]}) => Promise<Post>;
     },
     users: {
         searchUsers: (searchQuery: string) => Promise<User[]>;
@@ -61,7 +61,8 @@ export const createApi = (http: AxiosStatic): API => {
             searchUsers: (searchQuery) => {
                 return http.get<{users: User[]}>(`${USERS_BASE_URI}/all`).then((users) => {
                     return users.data.users.filter((user) => {
-                        return user.email.toLowerCase().includes(searchQuery.toLowerCase())
+                        return searchQuery === '*'
+                            || user.email.toLowerCase().includes(searchQuery.toLowerCase())
                             || user.name.toLowerCase().includes(searchQuery.toLowerCase())
                     })
                 })

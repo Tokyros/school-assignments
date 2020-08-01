@@ -28,7 +28,6 @@ router.get('/all', async (req: Request, res: Response) => {
         return res.status(UNAUTHORIZED).end();
     }
 
-    console.log(req.body.user);
     const userId = req.body.user.id;
     
     const posts = await postDao.getAll();
@@ -49,7 +48,8 @@ router.post('/add', async (req: Request, res: Response) => {
             error: paramMissingError,
         });
     }
-    const newPost = new Post(getRandomInt(), req.body.user, postContent, []);
+    console.log(req.body);
+    const newPost = new Post(getRandomInt(), req.body.user, postContent, req.body.imageIds, Date.now());
     // Add new user
     await postDao.add(newPost);
     return res.status(CREATED).json(newPost).end();

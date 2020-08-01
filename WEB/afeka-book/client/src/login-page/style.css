@@ -1,0 +1,25 @@
+.login-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: 600;
+    width: 630px;
+}
+
+.login-page hr {
+    width: 100%;
+}
+
+.login-page .login-form {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    justify-content: center;
+    align-items: baseline;
+    margin-bottom: 12px;
+    line-height: 2em;
+}
+

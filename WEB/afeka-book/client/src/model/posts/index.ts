@@ -6,4 +6,5 @@ export type Post = {
     content: string;
     author: Author;
     imageUrls: string[];
+    creationDate: number;
 }
