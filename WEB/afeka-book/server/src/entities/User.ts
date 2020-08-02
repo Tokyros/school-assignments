@@ -10,6 +10,7 @@ export interface IUser {
     pwdHash: string;
     role: UserRoles;
     friendIds: number[];
+    isPlaying: boolean;
 }
 
 export class User implements IUser {
@@ -20,6 +21,7 @@ export class User implements IUser {
     public role: UserRoles;
     public pwdHash: string;
     public friendIds: number[];
+    public isPlaying: boolean;
 
 
     constructor(
@@ -45,5 +47,6 @@ export class User implements IUser {
             this.id = nameOrUser.id;
             this.friendIds = nameOrUser.friendIds;
         }
+        this.isPlaying = false;
     }
 }

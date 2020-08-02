@@ -74,8 +74,11 @@ function setForm(player) {
             success: (data) => { 
                 if (data) {
                     console.log(data);
-                    const currentPlayer = JSON.parse(data)
-                    if (currentPlayer.name !== playerOne) {
+                    const currentPlayer = JSON.parse(data);
+                    if (!currentPlayer.isPlaying) {
+                        return;
+                    }
+                    if (currentPlayer.name !== plaeyrOne) {
                         player.replaceWith(`<h3 class="player-ready">${currentPlayer.name} is Ready</h3>`);
                         if (!playerOne && !playerTwo) {
                             playerOne = currentPlayer.name;
@@ -307,7 +310,6 @@ class War {
     }
 
     onCardPlayed = (player) => {
-        let debounce = null;
         if ((this.player1.chosenCard && this.player2.chosenCard) || this.winner) {
             return;
         }
@@ -343,9 +345,16 @@ class War {
     }
 
     playWar(initialCards) {
+        if (this.winner) {
+            return;
+        }
         let i = 0;
         this.warCards.push(...initialCards);
         this.warInterval = setInterval(() => {
+            this.checkForWinner();
+            if (this.winner) {
+                clearInterval(this.warInterval);
+            }
             $('.pl1').text('X');
             $('.pl2').text('X');
             this.player1.playCard();
@@ -394,6 +403,7 @@ class War {
     }
 
     async renderEndGame() {
+        $('#winner').text(`${this.winner.playerName} wins`);
         await this.modal.show();
     }
 

@@ -21,11 +21,15 @@ router.post('/', async (req, res) => {
     if (!invitingUser) {
         return res.status(UNAUTHORIZED).json({message: 'You must be logged in to initiate a game'});
     }
+    invitingUser.isPlaying = true;
     const invitedFriendEmail: string = req.body.friendEmail;
     const invitedUser = await userDao.getOne(invitedFriendEmail);
     if (!invitedUser) {
         return res.status(NOT_FOUND).json({message: `No user exists for the email - ${invitedFriendEmail}`});
     }
+    invitedUser.isPlaying = true;
+    await userDao.update(invitingUser);
+    await userDao.update(invitedUser);
     const game = new Game(invitingUser, invitedUser);
 
     gameDao.setGame(game);
