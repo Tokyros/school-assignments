@@ -60,7 +60,6 @@ const fullDeck = [
 
 function setForm(player) {
     player.submit((event) => {
-        console.log('here')
         event.preventDefault();
 
         $.ajax({
@@ -76,7 +75,7 @@ function setForm(player) {
                 if (data) {
                     console.log(data);
                     const currentPlayer = JSON.parse(data)
-                    if (true) {
+                    if (currentPlayer.name !== playerOne) {
                         player.replaceWith(`<h3 class="player-ready">${currentPlayer.name} is Ready</h3>`);
                         if (!playerOne && !playerTwo) {
                             playerOne = currentPlayer.name;
@@ -101,25 +100,34 @@ function setForm(player) {
 setForm($('#player1'));
 setForm($('#player2'));
 
+// Leaderboard?
 if (window.openDatabase) {
-    db = openDatabase("memory-game", "0.1", "Memory game database", 1024 * 1024);
-    initializeDatabase(db).then(initializeGameSetupGUI);
+    // db = openDatabase("memory-game", "0.1", "Memory game database", 1024 * 1024);
+    // initializeDatabase().then(initializeGameSetupGUI);
+    initializeGameSetupGUI();
 } else {
     alert("WebSQL is not supported by your browser!");
 }
 
+function initializeGameSetupGUI(gameConfig) {
+    $(".game-setup").css('display', 'flex');
+}
+
+// Leaderboard?
 function persistGameConfig(gameConfig) {
     db.transaction((t) => {
         t.executeSql(`UPDATE CONFIG SET gridSize = ${gameConfig.gridSize}, player1 = '${gameConfig.player1}', player2 = '${gameConfig.player2}' WHERE id = 1;`)
     });
 }
 
+// Leaderboard?
 function addGameResult(gameResult) {
     db.transaction((t) => {
         t.executeSql(`INSERT INTO GAMES (player1, player2, winner) VALUES ("${gameResult.player1}", "${gameResult.player2}", "${gameResult.winner}")`)
     })
 }
 
+// Leaderboard?
 function initializeConfig(t) {
     return new Promise((res) => {
         t.executeSql("CREATE TABLE IF NOT EXISTS CONFIG (id, gridSize, player1, player2)");
@@ -134,6 +142,7 @@ function initializeConfig(t) {
     })
 }
 
+// Leaderboard?
 function updateLeaderboard(games) {
     return new Promise((res) => {
         db.transaction((t) => {
@@ -161,6 +170,7 @@ function updateLeaderboard(games) {
     })
 }
 
+// Leaderboard?
 function initializeGame(t) {
     return new Promise((res) => {
         t.executeSql("CREATE TABLE IF NOT EXISTS GAMES (player1, player2, winner)");
@@ -168,6 +178,7 @@ function initializeGame(t) {
     })
 }
 
+// Leaderboard?
 async function initializeDatabase() {
     return new Promise((res) => {
         db.transaction(function (t) {
@@ -180,33 +191,8 @@ async function initializeDatabase() {
     })
 }
 
-function initializeGameSetupGUI(gameConfig) {
-    console.log(gameConfig);
-    $("#player1-name-input").val(gameConfig.player1);
-    $("#player2-name-input").val(gameConfig.player2);
-    $("#board-size").val(gameConfig.gridSize);
-    $(".game-setup").css('display', 'flex');
-}
-
 function shuffle(arr) {
-    return arr.sort(function (a, b) { return 0.5 - Math.random() })
-}
-
-function createBoard(boardSize) {
-    let currentCard = 1;
-    const cardCount = boardSize * boardSize;
-    const maxCardValue = Math.floor(cardCount / 2);
-    const board = new Array(cardCount).fill('').map((_, i) => {
-        if (currentCard > maxCardValue) {
-            return -1;
-        }
-        if (i % 2 === 1) {
-            return currentCard++;
-        } else {
-            return currentCard
-        }
-    });
-    return shuffle(board);
+    return arr.sort((a, b) => 0.5 - Math.random());
 }
 
 class Player {
@@ -243,135 +229,7 @@ class Player {
     }
 
     updateScore() {
-        this.playerNameElement.text(`${this.playerName} score: ${this.deck.length}`);
-    }
-}
-
-class Board {
-    constructor(boardSize, onCellFlipped, getCurrentPlayer) {
-        this.boardSize = boardSize;
-        this.pendingFlippedCellId = null;
-        this.isLocked = false;
-        this.cells = createBoard(boardSize).map((value, i) => new Cell(i, value, Math.floor(i / boardSize)))
-        this.cells.forEach((cell) => this.registerOnCellClick(cell, onCellFlipped, getCurrentPlayer))
-    }
-
-    registerOnCellClick(cell, onCellFlipped, getCurrentPlayer) {
-        cell.registerOnClick(async () => {
-            if (!cell.isCellSuccessful() && !this.isLocked && cell.value !== -1) {
-                const result = await this.flipCell(cell.id, getCurrentPlayer());
-                onCellFlipped(result);
-            }
-        })
-    }
-
-    isGameOver() {
-        return this.cells.every((cell) => cell.value === -1 || cell.isCellSuccessful())
-    }
-
-    getCell(cellId) {
-        return this.cells[cellId];
-    }
-
-    lock() {
-        this.isLocked = true;
-    }
-
-    unlock() {
-        this.isLocked = false;
-    }
-
-    flipCell(cellId, currentPlayer) {
-        const cellToFlip = this.getCell(cellId);
-
-        if (this.pendingFlippedCellId === null) {
-            cellToFlip.markCellAsPending();
-            this.pendingFlippedCellId = cellId;
-            return Promise.resolve('pending');
-        }
-
-        if (this.pendingFlippedCellId === cellToFlip.id) {
-            return Promise.resolve('neutral');
-        }
-
-        this.lock();
-        return new Promise((res) => {
-            cellToFlip.markCellAsPending();
-            const pendingFlippedCell = this.getCell(this.pendingFlippedCellId);
-            this.pendingFlippedCellId = null;
-            // Delay the result for one second, 
-            setTimeout(() => {
-                const result = this.checkCellMatch(cellToFlip, pendingFlippedCell, currentPlayer);
-                res(result);
-                setTimeout(() => {
-                    this.unlock();
-                }, 650);
-            }, 1000)
-        });
-    }
-
-    checkCellMatch(cellA, cellB, currentPlayer) {
-        if (cellA.value === cellB.value) {
-            cellA.markCellAsSuccess(currentPlayer.playerNumber);
-            cellB.markCellAsSuccess(currentPlayer.playerNumber);
-            return 'success';
-        } else {
-            cellA.markCellAsFailure();
-            cellB.markCellAsFailure();
-            return 'failure';
-        }
-    }
-
-    render() {
-        return this.cells.map((cell) => cell.element);
-    }
-}
-
-class Cell {
-    constructor(id, value, row) {
-        this.id = id;
-        this.value = value;
-        this.row = row;
-        this.initializeElement();
-    }
-
-    initializeElement() {
-        this.element = $('<div></div>');
-        this.element.attr('id', this.id);
-        this.element.css('grid-row', this.row);
-        this.clearCellStatus();
-        this.element.append(`<img src="https://picsum.photos/id/${1057 + this.value}/140/140">`);
-    }
-
-    clearCellStatus() {
-        this.element.removeClass();
-        this.element.addClass('cell');
-        if (this.value === -1) {
-            this.element.addClass('unpaired-card')
-        }
-    }
-
-    markCellAsPending() {
-        this.clearCellStatus();
-        this.element.addClass('pending');
-    }
-
-    markCellAsSuccess(playerNumber) {
-        this.clearCellStatus();
-        this.element.addClass('success');
-        this.element.css('background-color', playerNumber === 1 ? 'blue' : 'red');
-    }
-
-    markCellAsFailure() {
-        setTimeout(() => this.clearCellStatus(), 500);
-    }
-
-    isCellSuccessful() {
-        return this.element.hasClass('success');
-    }
-
-    registerOnClick(onClick) {
-        this.element.click(onClick);
+        this.playerNameElement.text(`${this.playerName} Cards Remaining: ${this.deck.length}`);
     }
 }
 
@@ -379,6 +237,12 @@ class Modal {
     constructor() {
         $('#modal').click(() => this.hide());
         $('#game-status').click((e) => e.stopPropagation());
+        $('#replay-button').click(() => {
+            Player.playerCount = 0;
+            this.hide();
+            startGame();
+        });
+        $('#end-button').click(() => location.reload());
     }
 
     hide() {
@@ -404,51 +268,9 @@ class Game {
         this.war = new War(player1, player2);
         this.player1 = player1;
         this.player2 = player2;
-        this.setCurrentPlayer(player1);
-        this.modal = new Modal();
     }
 
-    setCurrentPlayer(player) {
-        this.currentPlayer = player;
-        $('.current-player').text(`Current player: ${this.currentPlayer.playerName}`);
-    }
-
-    getNextPlayer() {
-        return this.currentPlayer.playerName === this.player1.playerName ? this.player2 : this.player1
-    }
-
-    onFlipCell(result) {
-        switch (result) {
-            case 'success':
-                this.incrementPlayerScore(this.currentPlayer)
-                break;
-            case 'failure':
-                this.setCurrentPlayer(this.getNextPlayer());
-                break;
-        }
-
-        if (this.board.isGameOver()) {
-            this.modal.show().then(showGameSetup);
-            if (this.player1.score === this.player2.score) {
-                this.modal.setText("It's a tie! click anywhere to play again")
-            } else {
-                const winner = this.player1.score > this.player2.score ? this.player1.playerName : this.player2.playerName;
-                this.modal.setText(`${winner} wins! click anywhere to play again`);
-                addGameResult({player1: this.player1.playerName, player2: this.player2.playerName, winner});
-            }
-        }
-    }
-
-    getCurrentPlayer() {
-        return this.currentPlayer;
-    }
-
-    incrementPlayerScore(player) {
-        player.incrementScore();
-    }
-
-    render() {
-        
+    render() { 
         $('.score-board').append(
             this.player1.element,
             this.player2.element,
@@ -474,37 +296,105 @@ class Deck {
 
 class War {
     constructor(player1, player2) {
+        this.winner = null;
         this.player1 = player1;
         this.player2 = player2;
         this.player1Deck = new Deck(player1, this.onCardPlayed);
         this.player2Deck = new Deck(player2, this.onCardPlayed);
+        this.warInterval = null;
+        this.warCards = [];
+        this.modal = new Modal();
     }
 
     onCardPlayed = (player) => {
-        if (player.playerNumber === 1) {
-            $('.pl1').text(this.player1.deck[0]);
+        let debounce = null;
+        if ((this.player1.chosenCard && this.player2.chosenCard) || this.winner) {
+            return;
+        }
+        if (player.playerNumber === 1 && !this.player1.chosenCard) {
             this.player1.playCard();
-        } else {
-            $('.pl2').text(this.player2.deck[0]);
+            $('.pl1').text(this.player1.chosenCard);
+        } else if (player.playerNumber === 2 && !this.player2.chosenCard) {
             this.player2.playCard();
+            $('.pl2').text(this.player2.chosenCard);
         }
         if (this.player1.chosenCard && this.player2.chosenCard) {
+            let addCardPromise;
             if (this.player1.chosenCard > this.player2.chosenCard) {
-                this.player2.addCards([this.player1.chosenCard, this.player2.chosenCard]);
+                addCardPromise = new Promise((res) => res(() => this.player2.addCards([this.player1.chosenCard, this.player2.chosenCard])));
             } else if (this.player1.chosenCard < this.player2.chosenCard) {
-                this.player1.addCards([this.player1.chosenCard, this.player2.chosenCard]);
+                addCardPromise = new Promise((res) => res(() => this.player1.addCards([this.player1.chosenCard, this.player2.chosenCard])));
             } else {
-                console.log('WAR');
+                setTimeout(() => {
+                    this.playWar([this.player1.chosenCard, this.player2.chosenCard]);
+                }, 300);
+                return;
             }
-            this.player1.chosenCard = null;
-            this.player2.chosenCard = null;
-            setTimeout(() => this.clearFields(), 700);
+            setTimeout(() => {
+                this.clearFields();
+                addCardPromise.then((addCards) => {
+                    addCards();
+                    this.player1.chosenCard = null;
+                    this.player2.chosenCard = null;
+                    this.checkForWinner();
+                });
+            }, 700);
         }
+    }
+
+    playWar(initialCards) {
+        let i = 0;
+        this.warCards.push(...initialCards);
+        this.warInterval = setInterval(() => {
+            $('.pl1').text('X');
+            $('.pl2').text('X');
+            this.player1.playCard();
+            this.player2.playCard();
+            this.warCards.push(this.player1.chosenCard, this.player2.chosenCard);
+            setTimeout(() => {
+                if (i === 2) {
+                    $('.pl1').text(`${this.player1.chosenCard}`);
+                    $('.pl2').text(`${this.player2.chosenCard}`);
+                    if (this.player1.chosenCard > this.player2.chosenCard) {
+                        this.player2.addCards(this.warCards);
+                        this.warCards = [];
+                    } else if (this.player1.chosenCard < this.player2.chosenCard) {
+                        this.player1.addCards(this.warCards);
+                        this.warCards = [];
+                    } else {
+                        setTimeout(() => this.playWar([this.player1.chosenCard, this.player2.chosenCard]), 300);
+                    }
+                    setTimeout(() => {
+                        this.clearFields();
+                        this.player2.chosenCard = null;
+                        this.player1.chosenCard = null;
+                    }, 700);
+                    clearInterval(this.warInterval);
+                } else {
+                    this.clearFields();
+                }
+                i++;
+            }, 300);
+        }, 600);
     }
 
     clearFields() {
         $('.pl1').text('');
         $('.pl2').text('');
+    }
+
+    checkForWinner() {
+        if (this.player2.deck.length === 0) {
+            this.winner = this.player2;
+            this.renderEndGame();
+        } else if (this.player1.deck.length === 0) {
+            this.winner = this.player1;
+            this.renderEndGame();
+        }
+    }
+
+    async renderEndGame() {
+        await this.modal.show();
     }
 
     renderField() {

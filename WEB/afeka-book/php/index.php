@@ -12,7 +12,15 @@
 
 <body>
     <div id="modal">
-        <div id="game-status"></div>
+        <div id="game-status">
+            <span>Game Ended!</span>    
+            <span id="winner"></span> 
+            <span>Play again?</span>
+            <div>
+                <button id="replay-button">Yes</button>
+                <button id="end-button">No</button>
+            </div>
+        </div>
     </div>
     <div class="head">
         <h1>Memory Paluza - Awesome memory game!</h1>
@@ -50,7 +58,7 @@
         
     </div>
     <div class="game-board">
-        
+
     </div>
     <script src='ex.js'></script>
 </body>
