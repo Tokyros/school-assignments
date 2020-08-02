@@ -1,13 +1,11 @@
-import React, { useEffect, createContext, useContext } from 'react';
+import React from 'react';
 import './App.css';
 import { LoginPage } from './login-page';
 import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link,
   Redirect,
-  useRouteMatch,
   useHistory
 } from 'react-router-dom'
 import { createApi, API } from './api';
@@ -16,14 +14,14 @@ import { FeedPage } from './feed-page';
 import { User } from './model/users';
 import { FriendsPage } from './friends-page';
 
-export const APIContext = createContext<API>(createApi(Axios));
-export const AuthContext = createContext<{user?: User, setUser: (user: User) => void}>({
+export const APIContext = React.createContext<API>(createApi(Axios));
+export const AuthContext = React.createContext<{user?: User, setUser: (user: User) => void}>({
   setUser: () => null
 });
 
 function AppInner() {
   const api = React.useContext(APIContext);
-  const {user, setUser} = React.useContext(AuthContext);
+  const {setUser} = React.useContext(AuthContext);
   const history = useHistory();
   const [loading, setLoading] = React.useState(true);
   React.useEffect(() => {
@@ -34,7 +32,7 @@ function AppInner() {
       setLoading(false);
       history.push('/login');
     });
-  }, []);
+  }, [api.auth, history, setUser]);
 
   if (loading) {
     return <div>

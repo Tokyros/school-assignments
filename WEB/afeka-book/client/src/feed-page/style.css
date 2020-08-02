@@ -1,0 +1,12 @@
+
+
+.add-post {
+    display: flex;
+    flex-direction: column;
+}
+
+.add-post textarea {
+    resize: none;
+    height: 100px;
+    width: 430px;
+}

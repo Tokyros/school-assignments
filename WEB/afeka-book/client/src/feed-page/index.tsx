@@ -3,6 +3,10 @@ import { APIContext, AuthContext } from '../App';
 import { useHistory } from 'react-router-dom';
 import { Post } from '../model/posts';
 import { User } from '../model/users';
+import { Modal } from '../components/modal';
+import { UserView } from '../components/user-view';
+import { PostsList } from '../components/posts-list';
+import { AddPost } from '../components/add-post';
 
 export const useDebounce = (value: string, delay: number) => {
 	const [debouncedValue, setDebouncedValue] = React.useState(value);
@@ -13,7 +17,7 @@ export const useDebounce = (value: string, delay: number) => {
 		}, delay);
 		
 		return () => clearTimeout(timeoutId);
-	}, [value]);
+	}, [value, delay]);
 
 	return debouncedValue;
 }
@@ -25,42 +29,50 @@ export const FeedPage: React.FC = () => {
     
     const [searchQuery, setSearchQuery] = React.useState('');
     const [users, setUsers] = React.useState<User[]>([]);
+    const [searching, setSearching] = React.useState(false);
     
     const debouncedSearchQuery = useDebounce(searchQuery, 700);
     const api = React.useContext(APIContext);
     const {user: currentUser, setUser} = React.useContext(AuthContext);
 
     React.useEffect(() => {
+        api.feed.getAllPosts().then((posts) => {
+            setPosts(posts);
+        })
+    }, [api.feed])
+
+    React.useEffect(() => {
         if (currentUser) {
-            api.users.searchUsers(debouncedSearchQuery).then((usersResult) => setUsers(usersResult.filter((user) => user.email !== currentUser?.email)));
+            if (debouncedSearchQuery) {
+                api.users.searchUsers(debouncedSearchQuery).then((usersResult) => setUsers(usersResult.filter((user) => user.email !== currentUser?.email)));
+            } else {
+                setUsers([]);
+            }
         }
-    }, [debouncedSearchQuery, currentUser]);
+    }, [debouncedSearchQuery, currentUser, api.users]);
 
 
     const history = useHistory();
 
-    React.useEffect(() => {
-        // api.auth.checkLogin().then(async () => {
-        //     const posts = await api.feed.getAllPosts();
-        //     setPosts(posts);
-        // }).catch(() => {
-        //     history.push('/')
-        // })
-    }, []);
-
-    const submitPost = () => {
+    const submitPost = (textContent: string, fileIds: string[]) => {        
         api.feed.addPost({
-            postContent
+            postContent: textContent,
+            imageIds: fileIds
         }).then((post) => {
             setPosts([...posts, post]);
+            setWritingNewPost(false);
+            setPostContent('');
         })
     }
 
-    const newPostModal = writingNewPost && (
-        <div>
-            <input type='text' value={postContent} onChange={(e) => setPostContent(e.target.value)}/>
-            <button onClick={submitPost}>SUBMIT</button>
-        </div>
+    const newPostModal = (
+        <Modal
+            isOpen={writingNewPost}
+            onClose={() => setWritingNewPost(false)}
+            body={(
+                <AddPost onPostAdded={submitPost}/>
+            )}
+        />
     )
 
     const addFriend = (email: string) => () => {
@@ -74,36 +86,36 @@ export const FeedPage: React.FC = () => {
         });
     }
 
+    const searchUsersModal = (
+        <Modal isOpen={searching} onClose={() => setSearching(false)} body={(
+            <div>
+                <h2>Search for friends - </h2>
+                <h3>Type '*' to see a list of all registered users</h3>
+                <div className='user-list'>
+                    <input style={{width: '90%'}} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder='Search people' />
+                    {!!users.length && <p>Here are the search results:</p>}
+                    {users.map((user) => 
+                        <UserView
+                            user={user}
+                            isFriend={!!currentUser?.friends.find((friend) => friend.email === user.email)}
+                            onAddFriend={addFriend(user.email)}
+                        />
+                    )}
+                </div>
+            </div>
+        )}/>
+    )
+
     console.log(currentUser);
     return (
         <div>
+            {searchUsersModal}
             <div className='header'>
-                <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder='Search people' />
-                <button onClick={() => setWritingNewPost(true)}>NEW POST</button>
+                <button onClick={() => setSearching(true)}>Search Users</button>
+                <button onClick={() => setWritingNewPost(true)}>Add post</button>
+                <button onClick={() => history.push('/friends')}>Friends list</button>
             </div>
-            <div className='posts-list'>
-                {posts.map((post) => {
-                    return (
-                        <div>
-                            {post.content}
-                        </div>
-                    )
-                })}
-            </div>
-            <div className='user-list'>
-                {users.map((user) => 
-                    <div className='user'>
-                        {user.name}
-                        {currentUser?.friends.find((friend) => friend.email === user.email) && "IS FRIEND"}
-                        <button onClick={addFriend(user.email)}>Add friend</button>
-                    </div>
-                )}
-            </div>
-            <div>
-                <button onClick={() => history.push('/friends')}>
-                    SEE FRIENDS
-                </button>
-            </div>
+            <PostsList posts={posts}/>
             {newPostModal}
         </div>
     )
