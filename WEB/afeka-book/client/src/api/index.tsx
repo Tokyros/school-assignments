@@ -16,7 +16,8 @@ export type API = {
     },
     feed: {
         getAllPosts: () => Promise<Post[]>;
-        addPost: (post: {postContent: string, imageIds: string[]}) => Promise<Post>;
+        addPost: (post: {postContent: string, imageIds: string[], isPrivate: boolean}) => Promise<Post>;
+        addPostComment: (post: Post, comment: string) => Promise<Post>;
     },
     users: {
         searchUsers: (searchQuery: string) => Promise<User[]>;
@@ -25,6 +26,7 @@ export type API = {
     },
     game: {
         setGame: (friendEmail: string) => Promise<void>;
+        getGame: () => Promise<{player1: User; player2: User;}>
     }
 }
 
@@ -55,6 +57,9 @@ export const createApi = (http: AxiosStatic): API => {
             },
             addPost: (post) => {
                 return http.post<Post>(`${FEED_BASE_URI}/add`, post).then((res) => res.data);
+            },
+            addPostComment: (post, comment) => {
+                return http.post(`${FEED_BASE_URI}/addComment`, {post, comment}).then((res) => res.data);
             }
         },
         users: {
@@ -79,6 +84,9 @@ export const createApi = (http: AxiosStatic): API => {
         game: {
             setGame: (friendEmail) => {
                 return http.post<void>(`${GAME_BASE_URI}`, {friendEmail}).then((res) => res.data);
+            },
+            getGame: () => {
+                return http.get(`${GAME_BASE_URI}`).then((res) => res.data);
             }
         }
     }

@@ -6,6 +6,8 @@ export interface IPost {
     content: string;
     imageUrls: string[];
     creationDate: number;
+    isPrivate: boolean;
+    comments: Array<{content: string, author: User}>;
 }
 
 export class Post implements IPost {
@@ -16,6 +18,8 @@ export class Post implements IPost {
         public content: string,
         public imageUrls: string[],
         public creationDate: number,
+        public isPrivate: boolean,
+        public comments: Array<{content: string, author: User}>
     ) {
         
     }

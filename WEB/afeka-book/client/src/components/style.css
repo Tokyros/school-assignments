@@ -1,3 +1,5 @@
 
 @import './modal/style.css';
 @import './user-view/style.css';
+@import './posts-list/style.css';
+@import './add-post/style.css';

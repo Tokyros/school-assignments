@@ -8,8 +8,14 @@ export type ModalProps = {
 
 export const Modal: React.FC<ModalProps> = ({isOpen, body, onClose}) => {
     
-    return isOpen ? <div className='modal'>
-        {body}
-        <button style={{marginTop: '10px'}} onClick={onClose}>Close modal</button>
-    </div> : null;
+    return isOpen ? 
+        <div className='modal'>
+            {body}
+            <button
+                style={{marginTop: '10px'}}
+                onClick={onClose}>
+                    Close
+            </button>
+        </div>
+    : null;
 }

@@ -25,7 +25,6 @@ export const useDebounce = (value: string, delay: number) => {
 export const FeedPage: React.FC = () => {
     const [posts, setPosts] = React.useState<Post[]>([]);
     const [writingNewPost, setWritingNewPost] = React.useState(false);
-    const [postContent, setPostContent] = React.useState('');
     
     const [searchQuery, setSearchQuery] = React.useState('');
     const [users, setUsers] = React.useState<User[]>([]);
@@ -54,14 +53,14 @@ export const FeedPage: React.FC = () => {
 
     const history = useHistory();
 
-    const submitPost = (textContent: string, fileIds: string[]) => {        
+    const submitPost = (textContent: string, fileIds: string[], isPrivate: boolean) => {        
         api.feed.addPost({
             postContent: textContent,
-            imageIds: fileIds
+            imageIds: fileIds,
+            isPrivate
         }).then((post) => {
             setPosts([...posts, post]);
             setWritingNewPost(false);
-            setPostContent('');
         })
     }
 
@@ -106,17 +105,38 @@ export const FeedPage: React.FC = () => {
         )}/>
     )
 
-    console.log(currentUser);
+    const onSignOut = () => {
+        api.auth.logout().then(() => {
+            history.push('/');
+        });
+    }
+
+    const onAddComment = async (post: Post, comment: string) => {
+        const updatePost = await api.feed.addPostComment(post, comment);
+        setPosts(posts.map((existingPost) => {
+            return existingPost.id === post.id ? updatePost : existingPost;
+        }))
+    }
+
+    console.log(posts);
+
     return (
-        <div>
+        <>
             {searchUsersModal}
             <div className='header'>
-                <button onClick={() => setSearching(true)}>Search Users</button>
-                <button onClick={() => setWritingNewPost(true)}>Add post</button>
-                <button onClick={() => history.push('/friends')}>Friends list</button>
+                <div className='menu'>
+                    <b>FaceAfeka</b>
+                    <button onClick={() => setSearching(true)}>Search Users</button>
+                    <button onClick={() => setWritingNewPost(true)}>Add post</button>
+                    <button onClick={() => history.push('/friends')}>Friends list</button>
+                    <button onClick={onSignOut}>Sign out</button>
+                </div>
+                <div className='logged-in-user'>
+                    Logged in as: {currentUser?.name}
+                </div>
             </div>
-            <PostsList posts={posts}/>
+            <PostsList onAddComment={onAddComment} posts={posts}/>
             {newPostModal}
-        </div>
+        </>
     )
 }

@@ -46,9 +46,9 @@ class PostDao extends MockDaoMock implements IPostDao {
     public async update(post: IPost): Promise<void> {
         try {
             const db = await super.openDb();
-            for (let i = 0; i < db.users.length; i++) {
-                if (db.users[i].id === post.id) {
-                    db.users[i] = post;
+            for (let i = 0; i < db.posts.length; i++) {
+                if (db.posts[i].id === post.id) {
+                    db.posts[i] = post;
                     await super.saveDb(db);
                     return;
                 }

@@ -1,5 +1,6 @@
 export type Author = {
     name: string;
+    email: string;
 }
 
 export type Post = {
@@ -7,4 +8,6 @@ export type Post = {
     author: Author;
     imageUrls: string[];
     creationDate: number;
+    id: number;
+    comments: Array<{content: string, author: Author}>
 }
