@@ -78,7 +78,8 @@ function setForm(player) {
                     if (!currentPlayer.isPlaying) {
                         return;
                     }
-                    if (currentPlayer.name !== plaeyrOne) {
+                    //currentPlayer.name !== playerOne
+                    if (true) {
                         player.replaceWith(`<h3 class="player-ready">${currentPlayer.name} is Ready</h3>`);
                         if (!playerOne && !playerTwo) {
                             playerOne = currentPlayer.name;
@@ -323,9 +324,15 @@ class War {
         if (this.player1.chosenCard && this.player2.chosenCard) {
             let addCardPromise;
             if (this.player1.chosenCard > this.player2.chosenCard) {
-                addCardPromise = new Promise((res) => res(() => this.player2.addCards([this.player1.chosenCard, this.player2.chosenCard])));
+                addCardPromise = new Promise((res) => res(() => {
+                    this.player2.addCards([this.player1.chosenCard, this.player2.chosenCard]);
+                    this.player2.deck = shuffle(this.player2.deck);
+                }));
             } else if (this.player1.chosenCard < this.player2.chosenCard) {
-                addCardPromise = new Promise((res) => res(() => this.player1.addCards([this.player1.chosenCard, this.player2.chosenCard])));
+                addCardPromise = new Promise((res) => res(() => {
+                    this.player1.addCards([this.player1.chosenCard, this.player2.chosenCard]);
+                    this.player1.deck = shuffle(this.player1.deck);
+                }));
             } else {
                 setTimeout(() => {
                     this.playWar([this.player1.chosenCard, this.player2.chosenCard]);
@@ -349,32 +356,51 @@ class War {
             return;
         }
         let i = 0;
+        let prevPlayer1Card = initialCards[0];
+        let prevPlayer2Card = initialCards[1];
         this.warCards.push(...initialCards);
         this.warInterval = setInterval(() => {
-            this.checkForWinner();
-            if (this.winner) {
-                clearInterval(this.warInterval);
+            this.player1.deck.length > 0 ? $('.pl1').text('X') : $('.pl1').text(`${this.player1.chosenCard ? this.player1.chosenCard : prevPlayer1Card}`);
+            this.player2.deck.length > 0 ? $('.pl2').text('X') : $('.pl2').text(`${this.player2.chosenCard ? this.player2.chosenCard : prevPlayer2Card}`);
+            this.player1.deck.length > 0 && this.player1.playCard();
+            this.player2.deck.length > 0 && this.player2.playCard();
+
+            if (this.player1.deck.length <= 0 && this.player2.deck.length > 0) {
+                this.player2.chosenCard && this.warCards.push(this.player2.chosenCard);
+            } else if (this.player2.deck.length <= 0 && this.player1.deck.length > 0){
+                this.player1.chosenCard && this.warCards.push(this.player1.chosenCard);
+            } else if (this.player1.chosenCard && this.player2.chosenCard) {
+                this.warCards.push(this.player1.chosenCard || prevPlayer1Card, this.player2.chosenCard || prevPlayer2Card);
             }
-            $('.pl1').text('X');
-            $('.pl2').text('X');
-            this.player1.playCard();
-            this.player2.playCard();
-            this.warCards.push(this.player1.chosenCard, this.player2.chosenCard);
+            
             setTimeout(() => {
-                if (i === 2) {
-                    $('.pl1').text(`${this.player1.chosenCard}`);
-                    $('.pl2').text(`${this.player2.chosenCard}`);
-                    if (this.player1.chosenCard > this.player2.chosenCard) {
+                if (i === 2 || (this.player1.deck.length === 0 && this.player2.deck.length === 0)) {
+                    const player1Card = this.player1.chosenCard || prevPlayer1Card;
+                    const player2Card = this.player2.chosenCard || prevPlayer2Card;
+                    $('.pl1').text(`${player1Card}`);
+                    $('.pl2').text(`${player2Card}`);
+                    if (player1Card > player2Card) {
                         this.player2.addCards(this.warCards);
+                        this.checkForWinner();
                         this.warCards = [];
-                    } else if (this.player1.chosenCard < this.player2.chosenCard) {
+                    } else if (player1Card < player2Card) {
                         this.player1.addCards(this.warCards);
+                        this.checkForWinner();
                         this.warCards = [];
                     } else {
-                        setTimeout(() => this.playWar([this.player1.chosenCard, this.player2.chosenCard]), 300);
+                        if (this.player1.deck.length === 0 && this.player2.deck.length == 0) {
+                            this.declareTie();
+                        } else {
+                            setTimeout(() => this.playWar([player1Card, player2Card]), 300);
+                        }
                     }
                     setTimeout(() => {
                         this.clearFields();
+                        if (this.player1.deck.length === 0 && this.player2.deck.length === 0 && this.player1.chosenCard === this.player2.chosenCard) {
+                            return;
+                        }
+                        prevPlayer1Card = this.player1.chosenCard ? this.player1.chosenCard : prevPlayer1Card;
+                        prevPlayer2Card = this.player2.chosenCard ? this.player2.chosenCard : prevPlayer2Card;
                         this.player2.chosenCard = null;
                         this.player1.chosenCard = null;
                     }, 700);
@@ -388,8 +414,8 @@ class War {
     }
 
     clearFields() {
-        $('.pl1').text('');
-        $('.pl2').text('');
+        this.player1.deck.length > 0 && $('.pl1').text('');
+        this.player2.deck.length > 0 && $('.pl2').text('');
     }
 
     checkForWinner() {
@@ -402,7 +428,15 @@ class War {
         }
     }
 
+    async declareTie() {
+        $('#winner').text(`It's a tie!`);
+        await this.modal.show();
+    }
+
     async renderEndGame() {
+        console.log('PLAYER1', this.player1)
+        console.log('PLAYER2', this.player2)
+        console.log(this.warCards);
         $('#winner').text(`${this.winner.playerName} wins`);
         await this.modal.show();
     }
