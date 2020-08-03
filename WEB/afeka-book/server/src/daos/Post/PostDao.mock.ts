@@ -1,10 +1,10 @@
-import { IUser } from '@entities/User';
 import { getRandomInt } from '@shared/functions';
 import { MockDaoMock } from '../MockDb/MockDao.mock';
 import { IPostDao } from './PostDao';
 import { IPost } from '@entities/Post';
 
 class PostDao extends MockDaoMock implements IPostDao {
+
 
     public async getOne(id: number): Promise<IPost | null> {
         try {
@@ -34,7 +34,7 @@ class PostDao extends MockDaoMock implements IPostDao {
     public async add(post: IPost): Promise<void> {
         try {
             const db = await super.openDb();
-            post.id = getRandomInt();
+            post.postId = getRandomInt();
             db.posts.push(post);
             await super.saveDb(db);
         } catch (err) {
@@ -47,7 +47,7 @@ class PostDao extends MockDaoMock implements IPostDao {
         try {
             const db = await super.openDb();
             for (let i = 0; i < db.posts.length; i++) {
-                if (db.posts[i].id === post.id) {
+                if (db.posts[i].id === post.postId) {
                     db.posts[i] = post;
                     await super.saveDb(db);
                     return;

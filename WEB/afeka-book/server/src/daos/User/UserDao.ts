@@ -1,4 +1,5 @@
 import { IUser } from '@entities/User';
+import { getDb } from '../';
 
 
 export interface IUserDao {
@@ -6,57 +7,26 @@ export interface IUserDao {
     getAll: () => Promise<IUser[]>;
     add: (user: IUser) => Promise<void>;
     update: (user: IUser) => Promise<void>;
-    delete: (id: number) => Promise<void>;
 }
 
 class UserDao implements IUserDao {
-
-
-    /**
-     * @param email
-     */
     public async getOne(email: string): Promise<IUser | null> {
-        // TODO
-        return [] as any;
+        return await getDb().collection('users').findOne<IUser>({ email });
     }
 
 
-    /**
-     *
-     */
     public async getAll(): Promise<IUser[]> {
-        // TODO
-        return [] as any;
+        return await getDb().collection('users').find<IUser>().toArray();
     }
 
 
-    /**
-     *
-     * @param user
-     */
     public async add(user: IUser): Promise<void> {
-        // TODO
-        return {} as any;
+        const res = await getDb().collection('users').insert(user);
     }
 
 
-    /**
-     *
-     * @param user
-     */
     public async update(user: IUser): Promise<void> {
-        // TODO
-        return {} as any;
-    }
-
-
-    /**
-     *
-     * @param id
-     */
-    public async delete(id: number): Promise<void> {
-        // TODO
-        return {} as any;
+        await getDb().collection('users').update({email: user.email}, user);
     }
 }
 

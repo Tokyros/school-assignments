@@ -1,4 +1,5 @@
 import { IGame } from '@entities/Game';
+import { getDb } from '..';
 
 
 export interface IGameDao {
@@ -9,21 +10,13 @@ export interface IGameDao {
 class GameDao implements IGameDao {
 
 
-    /**
-     * @param email
-     */
     public async getGame(): Promise<IGame | null> {
-        // TODO
-        return [] as any;
+        return (await getDb().collection('game').find().toArray())[0]
     }
 
 
-    /**
-     *
-     */
     public async setGame(game: IGame | null): Promise<void> {
-        // TODO
-        return [] as any;
+        await getDb().collection('game').insert(game);
     }
 }
 

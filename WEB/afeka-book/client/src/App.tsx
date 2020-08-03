@@ -24,10 +24,12 @@ function AppInner() {
   const {setUser} = React.useContext(AuthContext);
   const history = useHistory();
   const [loading, setLoading] = React.useState(true);
+  
   React.useEffect(() => {
     api.auth.me().then((res) => {
       setUser(res);
       setLoading(false);
+      history.push('/feed');
     }).catch(() => {
       setLoading(false);
       history.push('/login');
@@ -36,7 +38,7 @@ function AppInner() {
 
   if (loading) {
     return <div>
-      LOADING
+        Loading application...
     </div>
   }
 
@@ -61,11 +63,6 @@ function AppInner() {
 function App() {
   const [user, setUser] = React.useState<User | undefined>();
   const api = React.useRef(createApi(Axios));
-  
-  React.useEffect(() => {
-    // api.current.auth.me().then((currUser) => setUser(currUser))
-  }, []);
-
 
   return (
     <Router>

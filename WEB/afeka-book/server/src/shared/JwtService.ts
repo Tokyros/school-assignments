@@ -1,11 +1,9 @@
-import randomString from 'randomstring';
 import jsonwebtoken, { VerifyErrors } from 'jsonwebtoken';
 import { cookieProps } from '@shared/constants';
 
 
 interface IClientData {
     id: number;
-    role: number;
 }
 
 export class JwtService {
@@ -16,16 +14,11 @@ export class JwtService {
 
 
     constructor() {
-        this.secret = (process.env.JWT_SECRET || randomString.generate(100));
+        this.secret = 'FA_JWT';
         this.options = {expiresIn: cookieProps.options.maxAge.toString()};
     }
 
 
-    /**
-     * Encrypt data and return jwt.
-     *
-     * @param data
-     */
     public getJwt(data: IClientData): Promise<string> {
         return new Promise((resolve, reject) => {
             jsonwebtoken.sign(data, this.secret, this.options, (err, token) => {
@@ -35,11 +28,6 @@ export class JwtService {
     }
 
 
-    /**
-     * Decrypt JWT and extract client data.
-     *
-     * @param jwt
-     */
     public decodeJwt(jwt: string): Promise<IClientData> {
         return new Promise((res, rej) => {
             jsonwebtoken.verify(jwt, this.secret, (err: VerifyErrors | null, decoded?: object) => {

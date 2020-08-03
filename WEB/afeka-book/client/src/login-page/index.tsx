@@ -30,7 +30,6 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
                 case 401:
                     setErrorMessage('Either the E-mail or password you entered are incorrect or you might not be registered to FaceAfeka™, try again');
                     break;
-
             }
 
             console.error('An error occurred while login a user in', e);
@@ -47,7 +46,7 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
 
     const onSignup = () => {
         return api.auth.signup({email, password}).catch((e) => {
-            console.log(e.response);
+            (e.response);
             switch (e.response.status) {
                 case 409:
                     setErrorMessage(MAIL_ALREADY_REGISTERED_ERROR);

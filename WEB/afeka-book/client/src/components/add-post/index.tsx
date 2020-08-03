@@ -5,7 +5,7 @@ export type AddPostProps = {
     onPostAdded: (textContent: string, imageData: string[], isPrivate: boolean) => void;
 }
 
-async function FileUpload(files: File[]) {
+async function uploadFiles(files: File[]) {
     const formData = new FormData()
 
     files.forEach((file, idx) => {
@@ -26,7 +26,7 @@ export const AddPost: React.FC<AddPostProps> = ({onPostAdded}) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
     const submitPost = async () => {
         const maybeFiles = inputRef.current?.files;
-        const paths = maybeFiles ? await FileUpload(Array.from(maybeFiles)) : [];
+        const paths = maybeFiles ? await uploadFiles(Array.from(maybeFiles)) : [];
         onPostAdded(textContent, paths, isPrivate);        
     }
 

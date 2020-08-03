@@ -118,8 +118,6 @@ export const FeedPage: React.FC = () => {
         }))
     }
 
-    console.log(posts);
-
     return (
         <>
             {searchUsersModal}

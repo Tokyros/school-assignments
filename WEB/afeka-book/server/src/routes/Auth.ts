@@ -1,11 +1,11 @@
 import bcrypt from 'bcrypt';
-import { Request, Response, Router } from 'express';
-import { BAD_REQUEST, OK, UNAUTHORIZED, CONFLICT, NOT_FOUND } from 'http-status-codes';
+import { Router } from 'express';
+import { BAD_REQUEST, OK, UNAUTHORIZED, CONFLICT } from 'http-status-codes';
 
-import UserDao from '@daos/User/UserDao.mock';
+import UserDao from '@daos/User/UserDao';
 import { JwtService } from '@shared/JwtService';
 import { paramMissingError, loginFailedErr, cookieProps, userExistsError, pwdSaltRounds } from '@shared/constants';
-import { User, UserRoles, IUser } from '@entities/User';
+import { User, IUser } from '@entities/User';
 import { getRandomInt } from '@shared/functions';
 import { JWTMiddleware } from './middleware';
 
@@ -16,95 +16,95 @@ router.use(JWTMiddleware);
 const userDao = new UserDao();
 const jwtService = new JwtService();
 
-
-/******************************************************************************
- *                      Login User - "POST /api/auth/login"
- ******************************************************************************/
-
-router.post('/signup', async (req: Request, res: Response) => {
-    const {email, password} = req.body as {email: string, password: string};
-    if (!(email && password)) {
-        return res.status(BAD_REQUEST).json({
-            error: paramMissingError,
-        });
-    }
-
-    const user = (await userDao.getAll()).find((user) => user.email === email);
-    if (user) {
-        return res.status(CONFLICT).json({
-            error: userExistsError
-        });
-    }
-
-    const passwordHash = bcrypt.hashSync(password, pwdSaltRounds);
-    const newUser = new User(email.split('@')[0], email, UserRoles.Standard, passwordHash, getRandomInt());
-
-    await userDao.add(newUser);
-
-    return res.status(OK).end();
-})
-
-const getUserWithFriends = (user: IUser, allUsers: IUser[]) => {
+// User is stored in DB with friendIDs
+// This converts these IDs to a list of friend User objects
+const getUserWithFriends = async (user: IUser) => {
+    const allUsers = await userDao.getAll();
     return {
         ...user,
         friends: allUsers.filter((oneUser) => user?.friendIds.includes(oneUser.id))
     }
 }
 
-router.get('/me', async (req: Request, res: Response) => {
+router.post('/sign-up', async (req, res) => {
+    const {email, password} = req.body;
+
+    // Email and password are mandatory
+    if (!(email && password)) {
+        return res.status(BAD_REQUEST).json({
+            error: paramMissingError,
+        });
+    }
+
+    // Check if email is already in use
+    const maybeUser = (await userDao.getOne(email));
+    if (maybeUser) {
+        return res.status(CONFLICT).json({
+            error: userExistsError
+        });
+    }
+
+    // Encrypt password
+    const passwordHash = bcrypt.hashSync(password, pwdSaltRounds);
+    const newUser = new User(email.split('@')[0], email, passwordHash, getRandomInt());
+
+    // Save new user in DB
+    await userDao.add(newUser);
+
+    return res.status(OK).end();
+})
+
+// This endpoint is for getting details about current logged in user
+// The user is authenticated via cookie with JWT
+router.get('/me', async (req, res) => {
     if (!req.body.user) {
+        // This normally means no user is currently logged in
+        // Useful for redirecting to login screens
         return res.status(UNAUTHORIZED).end();
     }
-    const userEmail = req.body.user.email;
 
-    const user = await userDao.getOne(userEmail);
-    if (!user) {
-        return res.status(NOT_FOUND).end();
-    }
-    const allUsers = await userDao.getAll();
-    return res.status(OK).json(getUserWithFriends(user, allUsers));
+    return res.status(OK).json(await getUserWithFriends(req.body.user));
 });
 
-router.post('/login', async (req: Request, res: Response) => {
-    // Check email and password present
+router.post('/login', async (req, res) => {
+    // Ensure both email and password are provided
     const { email, password } = req.body;
     if (!(email && password)) {
         return res.status(BAD_REQUEST).json({
             error: paramMissingError,
         });
     }
-    // Fetch user
+
+    // Check that user exists for this email
     const user = await userDao.getOne(email);
     if (!user) {
         return res.status(UNAUTHORIZED).json({
             error: loginFailedErr,
         });
     }
-    // Check password
+
+    // Check password matches email
     const pwdPassed = await bcrypt.compare(password, user.pwdHash);
     if (!pwdPassed) {
         return res.status(UNAUTHORIZED).json({
             error: loginFailedErr,
         });
     }
-    // Setup Admin Cookie
+
+    // Create user cookie so he can remain signed in between refreshed
     const jwt = await jwtService.getJwt({
         id: user.id,
-        role: user.role,
     });
     const { key, options } = cookieProps;
     res.cookie(key, jwt, options);
-    // Return
-    return res.status(OK).json(getUserWithFriends(user, await userDao.getAll()));
+
+    return res.status(OK).json(await getUserWithFriends(user));
 });
 
 
-/******************************************************************************
- *                      Logout - "GET /api/auth/logout"
- ******************************************************************************/
-
-router.get('/logout', async (req: Request, res: Response) => {
+router.get('/logout', async (_, res) => {
     const { key, options } = cookieProps;
+    // Remove cookie from user, logging in out of the system
     res.clearCookie(key, options);
     return res.status(OK).end();
 });

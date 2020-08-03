@@ -22,7 +22,6 @@ export type API = {
     users: {
         searchUsers: (searchQuery: string) => Promise<User[]>;
         addFriend: (friendEmail: string) => Promise<User[]>;
-        getFriends: () => Promise<User[]>;
     },
     game: {
         setGame: (friendEmail: string) => Promise<void>;
@@ -42,7 +41,7 @@ export const createApi = (http: AxiosStatic): API => {
                 return http.post<User>(`${AUTH_BASE_URI}/login`, loginData).then((res) => res.data);
             },
             signup: (loginData: LoginData) => {
-                return http.post(`${AUTH_BASE_URI}/signup`, loginData);
+                return http.post(`${AUTH_BASE_URI}/sign-up`, loginData);
             },
             logout: () => {
                 return http.get(`${AUTH_BASE_URI}/logout`);
@@ -53,18 +52,18 @@ export const createApi = (http: AxiosStatic): API => {
         },
         feed: {
             getAllPosts: () => {
-                return http.get<{posts: Post[]}>(`${FEED_BASE_URI}/all`).then((res) => res.data.posts);
+                return http.get<{posts: Post[]}>(`${FEED_BASE_URI}`).then((res) => res.data.posts);
             },
             addPost: (post) => {
-                return http.post<Post>(`${FEED_BASE_URI}/add`, post).then((res) => res.data);
+                return http.post<Post>(`${FEED_BASE_URI}`, post).then((res) => res.data);
             },
             addPostComment: (post, comment) => {
-                return http.post(`${FEED_BASE_URI}/addComment`, {post, comment}).then((res) => res.data);
+                return http.post(`${FEED_BASE_URI}/add-comment`, {post, comment}).then((res) => res.data);
             }
         },
         users: {
             searchUsers: (searchQuery) => {
-                return http.get<{users: User[]}>(`${USERS_BASE_URI}/all`).then((users) => {
+                return http.get<{users: User[]}>(`${USERS_BASE_URI}`).then((users) => {
                     return users.data.users.filter((user) => {
                         return searchQuery === '*'
                             || user.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -77,9 +76,6 @@ export const createApi = (http: AxiosStatic): API => {
                     return friendsResult.data.friends;
                 })
             },
-            getFriends: () => {
-                return http.get<User[]>(`${USERS_BASE_URI}/friends`).then((res) => res.data);
-            }
         },
         game: {
             setGame: (friendEmail) => {

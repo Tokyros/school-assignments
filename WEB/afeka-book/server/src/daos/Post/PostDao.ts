@@ -1,4 +1,5 @@
 import { IPost } from '@entities/Post';
+import { getDb } from '..';
 
 
 export interface IPostDao {
@@ -6,35 +7,26 @@ export interface IPostDao {
     getAll: () => Promise<IPost[]>;
     add: (post: IPost) => Promise<void>;
     update: (post: IPost) => Promise<void>;
-    delete: (id: number) => Promise<void>;
 }
 
 class PostDao implements IPostDao {
-
     public async getOne(id: number): Promise<IPost | null> {
-        // TODO
-        return [] as any;
+        return await getDb().collection('posts').findOne({id});
     }
+
 
     public async getAll(): Promise<IPost[]> {
-        // TODO
-        return [] as any;
+        return await getDb().collection('posts').find().toArray();
     }
 
+
     public async add(post: IPost): Promise<void> {
-        // TODO
-        return {} as any;
+        await getDb().collection('posts').insert(post);
     }
 
 
     public async update(post: IPost): Promise<void> {
-        // TODO
-        return {} as any;
-    }
-
-    public async delete(id: number): Promise<void> {
-        // TODO
-        return {} as any;
+        await getDb().collection('posts').update({_id: (post as any)._id}, post, {upsert: true});
     }
 }
 
