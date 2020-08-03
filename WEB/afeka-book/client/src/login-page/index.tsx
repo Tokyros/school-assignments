@@ -46,7 +46,6 @@ export const LoginPage: React.FC<LoginPageProps> = () => {
 
     const onSignup = () => {
         return api.auth.signup({email, password}).catch((e) => {
-            (e.response);
             switch (e.response.status) {
                 case 409:
                     setErrorMessage(MAIL_ALREADY_REGISTERED_ERROR);
