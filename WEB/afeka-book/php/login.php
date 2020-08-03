@@ -2,7 +2,7 @@
 
     require("http_client.php");
 
-    $auth_cookie_name = "ExpressGeneratorTs";
+    $auth_cookie_name = "_FAC";
 
     $url = 'http://localhost/api/auth/login';
     $data = array('email' => $_POST['email'], 'password' => $_POST['password']);

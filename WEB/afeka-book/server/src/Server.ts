@@ -19,7 +19,8 @@ const app = express();
 app.use(cors({origin: 'http://localhost:3000', credentials: true}));
 // Parse post request JSON payloads
 app.use(express.json());
-// app.use(express.urlencoded({extended: true}));
+// Parse urlencoded requests (php)
+app.use(express.urlencoded({extended: true}));
 // Allows usage of signed cookies, increases security
 app.use(cookieParser(cookieProps.secret));
 // Server requests logger

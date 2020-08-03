@@ -267,6 +267,23 @@ class Modal {
     }
 }
 
+// SHAHAR ATTEMPT
+// async function delay(time) {
+//     return new Promise((res) => setTimeout(res, time))
+// }
+
+// function move (playerCards, warCards, isLastRound, lastCards, playerNum) {
+//     if (playerCards.length > 1) {
+//         warCards.push(playerCards.shift());
+//         if (isLastRound) {
+//             lastCards[playerNum] = warCards[warCards.length - 1];
+//         }
+//     } else if (playerCards.length === 1) {
+//         warCards.push(playerCards.shift());
+//         lastCards[playerNum] = warCards[warCards.length - 1];
+//     }
+// }
+
 class Game {
     constructor(player1, player2) {
         this.war = new War(player1, player2);
@@ -335,6 +352,8 @@ class War {
                 }));
             } else {
                 setTimeout(() => {
+                    // SHAHAR ATTEMPT
+                    // this.warCards = [this.player1.chosenCard, this.player2.chosenCard];
                     this.playWar([this.player1.chosenCard, this.player2.chosenCard]);
                 }, 300);
                 return;
@@ -351,7 +370,45 @@ class War {
         }
     }
 
-    playWar(initialCards) {
+    async playWar(initialCards) {
+        // SHAHAR ATTEMPT
+        // let lastCards = [];
+        // move(this.player1.deck, this.warCards, false, lastCards, 0);
+        // move(this.player2.deck, this.warCards, false, lastCards, 1);
+        // await delay(300);
+        // $('.pl1').text('X');
+        // $('.pl2').text('X');
+        // await delay(600);
+        // $('.pl1').text('');
+        // $('.pl2').text('');
+        // move(this.player1.deck, this.warCards, false, lastCards, 0);
+        // move(this.player2.deck, this.warCards, false, lastCards, 1);
+        // await delay(300);
+        // $('.pl1').text('X');
+        // $('.pl2').text('X');
+        // await delay(600);
+        // $('.pl1').text('');
+        // $('.pl2').text('');
+        // move(this.player1.deck, this.warCards, false, lastCards, 0);
+        // move(this.player2.deck, this.warCards, false, lastCards, 1);
+        // await delay(300);
+        // $('.pl1').text('X');
+        // $('.pl2').text('X');
+        // $('.pl1').text(`${lastCards[0]}`);
+        // $('.pl2').text(`${lastCards[1]}`);
+
+        // if (lastCards[0] > lastCards[1]) {
+        //     this.player1.addCards(this.warCards);
+        // } else if (lastCards[0] === lastCards[1]) {
+        //     if (this.player1.deck.length || this.player2.deck.length) {
+        //         this.playWar();
+        //     } else {
+        //         this.declareTie();
+        //     }
+        // } else {
+        //     this.player2.addCards(this.warCards);
+        // }
+
         if (this.winner) {
             return;
         }
