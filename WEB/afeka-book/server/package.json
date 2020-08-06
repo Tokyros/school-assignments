@@ -12,17 +12,17 @@
     "watch": [
       "src"
     ],
-    "ext": "ts, html",
+    "ext": "js, html",
     "ignore": [
       "src/public"
     ],
-    "exec": "ts-node -r tsconfig-paths/register ./src"
+    "exec": "node -r esm -r module-alias/register ./src"
   },
   "_moduleAliases": {
-    "@daos": "dist/daos",
-    "@entities": "dist/entities",
-    "@shared": "dist/shared",
-    "@server": "dist/Server"
+    "@daos": "./src/daos",
+    "@entities": "./src/entities",
+    "@shared": "./src/shared",
+    "@server": "./src/Server"
   },
   "dependencies": {
     "@types/cors": "^2.8.6",
@@ -61,6 +61,7 @@
     "@types/randomstring": "^1.1.6",
     "@types/supertest": "^2.0.10",
     "@types/uuid": "^8.0.0",
+    "esm": "^3.2.25",
     "find": "^0.3.0",
     "fs-extra": "^9.0.1",
     "jasmine": "^3.5.0",
