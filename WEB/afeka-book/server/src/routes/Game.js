@@ -42,6 +42,8 @@ router.post('/', async (req, res) => {
         return res.status(BAD_REQUEST).json({message: `${invitedFriendEmail} is not listed in your list of friends, only friends can be invited to games`});
     }
 
+    console.log(invitedUser);
+    console.log(invitingUser);
     const game = new Game(invitingUser, invitedUser);
 
     await gameDao.setGame(game);
