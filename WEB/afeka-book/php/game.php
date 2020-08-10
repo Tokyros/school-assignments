@@ -1,13 +1,13 @@
 <?php 
     require("./utils.php");
-
+    
     $game = getGame();
     $player = getLoggedInUser();
 
     // If the game hasn't started redirect to lobby
-    if (!isGameStarted($game)) {
+    if (!resetGameIfPlayersChanged($game) || !isGameStarted($game)) {
         header("Location: ./index.php");
-    }
+    };
 
     $playerKey = getPlayerKey($player, $game);
     $otherPlayerKey = getOtherPlayerKey($playerKey);

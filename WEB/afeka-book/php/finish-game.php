@@ -11,7 +11,7 @@
 
     // Once both players confirmed finishing the game, cleanup the game file
     if ($game[$otherPlayerKey."-done"]) {
-        unlink("./game.json");
+        resetGame();
     }
 
     header("Location: ./index.php");

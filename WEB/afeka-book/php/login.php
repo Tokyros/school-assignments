@@ -3,9 +3,8 @@
 
     // We track all the game information inside this file
     // Here we make sure to extend the data already in the file whenever a user logs in
-    if (file_exists("./game.json")) {
-        $game_status = json_decode(file_get_contents("./game.json"), true);
-    } else {
+    $game_status = getGame();
+    if (!$game_status) {
         $game_status = [];
     }
 
@@ -42,6 +41,10 @@
     $game = http("http://localhost/api/game", "GET", array(), array())['result'];
     $player1 = json_decode($game, true)['player1'];
     $player2 = json_decode($game, true)['player2'];
+
+    if (!resetGameIfPlayersChanged($game_status)) {
+        header("Location: ./index.php");
+    }
 
     // Check that the user is one of the users invited from the FaceAfkea app
     if ($loggedInUser['id'] === $player1['id']) {

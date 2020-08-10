@@ -6,7 +6,11 @@ class GameDao {
     }
 
     async setGame(game) {
-        getDb().dropCollection('game');
+        try {
+            await getDb().dropCollection('game');
+        } catch (e) {
+
+        }
         await getDb().collection('game').insert(game);
     }
 }

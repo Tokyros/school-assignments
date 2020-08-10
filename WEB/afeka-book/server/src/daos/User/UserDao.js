@@ -1,6 +1,6 @@
 import { getDb } from '..';
 
-class UserDao {
+export class UserDao {
     async getOne(email) {
         return await getDb().collection('users').findOne({ email });
     }

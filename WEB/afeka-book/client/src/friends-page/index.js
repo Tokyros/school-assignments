@@ -5,21 +5,22 @@ import { Link } from "react-router-dom";
 
 export const FriendsPage = () => {
     const api = React.useContext(APIContext);
-    const [game, setGame] = React.useState(null);
     const [invitedFriends, setInvitedFriends] = React.useState([]);
     const {user: currentUser} = React.useContext(AuthContext);
 
     React.useEffect(() => {
         api.game.getGame().then((game) => {
-            setGame(game);
             const invitedEmails = [game?.player1?.email, game?.player2?.email];
-            setInvitedFriends(invitedEmails);
+            if (invitedEmails.includes(currentUser?.email)) {
+                setInvitedFriends(invitedEmails);
+            }
         });
     }, [])
 
     const inviteFriend = (friend) => () => {
-        setInvitedFriends([...invitedFriends, friend.email]);
-        api.game.setGame(friend.email);
+        api.game.setGame(friend.email).then(() => {
+            setInvitedFriends([currentUser.email, friend.email]);
+        });
     }
 
     const friends = currentUser?.friends || [];
@@ -33,13 +34,18 @@ export const FriendsPage = () => {
 
     return (
         <div className='friends-page'>
+            {friends.length ? <Link to='/feed'>Back to feed</Link> : null}
+            <h1>Friend list</h1>
             {!friends.length && emptyState}
             {friends.map((friend) => {
-                return <div key={friend.email}>
-                    <span>{friend.name}</span>
-                    {invitedFriends.includes(friend.email) && <span style={{marginLeft: '10px'}}>Invited ✅</span>}
-                    {!invitedFriends.includes(friend.email) && <button onClick={inviteFriend(friend)}>Invite to game</button>}
-                </div>
+                return (
+                    <div key={friend.email}>
+                        <span>User: </span>
+                        <span style={{fontSize: '16px', fontWeight: '900', marginRight: '5px'}}>{friend.name}</span>
+                        {invitedFriends.includes(friend.email) && <span>✅&nbsp;&nbsp;Already invited to game</span>}
+                        {!invitedFriends.includes(friend.email) && <button onClick={inviteFriend(friend)}>Invite to game</button>}
+                    </div>
+                )
             })}
         </div>
     )

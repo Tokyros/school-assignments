@@ -28,7 +28,9 @@ function AppInner() {
     api.auth.me().then((res) => {
       setUser(res);
       setLoading(false);
-      history.push('/feed');
+      if (history.location.pathname === '/') {
+        history.push('/feed');
+      }
     }).catch(() => {
       setLoading(false);
       history.push('/login');
@@ -36,7 +38,7 @@ function AppInner() {
   }, [api.auth, history, setUser]);
 
   if (loading) {
-    return <div>
+    return <div className="App">
         Loading application...
     </div>
   }

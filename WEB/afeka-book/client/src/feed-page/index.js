@@ -29,6 +29,8 @@ export const FeedPage = () => {
     const [searching, setSearching] = React.useState(false);
     
     const debouncedSearchQuery = useDebounce(searchQuery, 700);
+    
+    const history = useHistory();
     const api = React.useContext(APIContext);
     const {user: currentUser, setUser} = React.useContext(AuthContext);
 
@@ -48,8 +50,10 @@ export const FeedPage = () => {
         }
     }, [debouncedSearchQuery, currentUser, api.users]);
 
-
-    const history = useHistory();
+    if (!currentUser) {
+        history.push('/');
+        return null;
+    }
 
     const submitPost = (textContent, fileIds, isPrivate) => {        
         api.feed.addPost({

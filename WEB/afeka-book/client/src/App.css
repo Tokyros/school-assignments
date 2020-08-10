@@ -14,6 +14,17 @@ html, body, #root {
   align-items: center;
 }
 
+.App a {
+  padding: 7px;
+  background: blue;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 900;
+  color: #e3e9ec;
+  text-decoration: none;
+}
+
 .App button, .App input[type="submit"] {
     margin: 5px;
     border-radius: 5px;

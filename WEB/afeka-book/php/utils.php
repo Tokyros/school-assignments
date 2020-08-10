@@ -101,4 +101,24 @@
     function getOtherPlayerKey($playerKey) {
         return $playerKey === "player1" ? "player2" : "player1";
     }
+
+    function resetGameIfPlayersChanged($game) {
+        // Get the current players of the game, so we can be sure the user logging in is one of them
+        $game_invitations = http("http://localhost/api/game", "GET", array(), array())['result'];
+        $player1 = json_decode($game_invitations, true)['player1'];
+        $player2 = json_decode($game_invitations, true)['player2'];
+
+        // Clear old game if exists
+        if (isGameStarted($game) && (!getPlayerKey($player1, $game) || !getPlayerKey($player2, $game))) {
+            resetGame();
+            $game_status = [];
+            return FALSE;
+        } else {
+            return TRUE;
+        }
+    }
+
+    function resetGame() {
+        unlink("./game.json");
+    }
 ?>
