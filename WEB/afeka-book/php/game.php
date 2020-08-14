@@ -15,12 +15,6 @@
     $playerCardsLeft = count($game[$playerKey]['cards']);
     $otherPlayerCardsLeft = count($game[$otherPlayerKey]['cards']);
 
-    echo("your cards:<br>");
-    print_r($game[$playerKey]['cards']);
-    echo("<br>his cards:<br>");
-    print_r($game[$otherPlayerKey]['cards']);
-    echo("<h1>".$player['name']."</h1>");
-
     $playerName = $game[$playerKey]['name'];
     $otherPlayerName = $game[$otherPlayerKey]['name'];
 
@@ -84,7 +78,6 @@
                 if ($otherPlayerCard > $myCard) {
                     // Only update cards array once when the round is over
                     if (!$game['round-over']) {
-                        echo("Taking cards from other player - Mine - ".$myCard." His -".$otherPlayerCard);
                         array_unshift($game[$playerKey]['cards'], $myCard, $otherPlayerCard);
                         $game['round-over'] = TRUE;
                     }
