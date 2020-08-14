@@ -6,17 +6,17 @@
     $playerKey = getPlayerKey($loggedInUser, $game);
     $otherPlayerKey = getOtherPlayerKey($playerKey);
 
-    // approve round
-    $game[$playerKey."-round-approved"] = TRUE;
-    setGame($game);
-
     // reset round
     if ($game[$otherPlayerKey."-round-approved"]) {
         $game[$playerKey."-card"] = null;
         $game[$otherPlayerKey."-card"] = null;
         $game['round-over'] = FALSE;
-        setGame($game);
+    } else {
+        // approve round
+        $game[$playerKey."-round-approved"] = TRUE;
     }
+
+    setGame($game);
 
     header("Location: ./game.php");
 ?>

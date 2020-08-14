@@ -17,7 +17,9 @@ class PostDao {
 
 
     async update(post) {
-        await getDb().collection('posts').update({_id: post._id}, post, {upsert: true});
+        // Make sure mongo doesn't see this as an attempt to change id
+        delete post._id;
+        await getDb().collection('posts').update({id: post.id}, post, {upsert: true});
     }
 }
 

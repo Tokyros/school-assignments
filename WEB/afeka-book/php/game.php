@@ -15,6 +15,12 @@
     $playerCardsLeft = count($game[$playerKey]['cards']);
     $otherPlayerCardsLeft = count($game[$otherPlayerKey]['cards']);
 
+    echo("your cards:<br>");
+    print_r($game[$playerKey]['cards']);
+    echo("<br>his cards:<br>");
+    print_r($game[$otherPlayerKey]['cards']);
+    echo("<h1>".$player['name']."</h1>");
+
     $playerName = $game[$playerKey]['name'];
     $otherPlayerName = $game[$otherPlayerKey]['name'];
 
@@ -78,19 +84,14 @@
                 if ($otherPlayerCard > $myCard) {
                     // Only update cards array once when the round is over
                     if (!$game['round-over']) {
-                        array_push($game[$playerKey]['cards'], array_pop($game[$otherPlayerKey]['cards']));
+                        echo("Taking cards from other player - Mine - ".$myCard." His -".$otherPlayerCard);
+                        array_unshift($game[$playerKey]['cards'], $myCard, $otherPlayerCard);
+                        $game['round-over'] = TRUE;
                     }
                     echo "<div>You lose this round... 😢</div>";
                 } else if ($otherPlayerCard === $myCard) {
-                    if (!$game['round-over']) {
-                        array_pop($game[$otherPlayerKey]['cards']);
-                        array_pop($game[$playerKey]['cards']);
-                    }
                     echo "<div class=\"round-results\">This round resulted in a TIE!</div>";
                 } else {
-                    if (!$game['round-over']) {
-                        array_push($game[$otherPlayerKey]['cards'], array_pop($game[$playerKey]['cards']));
-                    }
                     echo "<div>You win this round! 🏆</div>";
                 }
 
@@ -104,7 +105,6 @@
                 }
 
                 // Set the round as over
-                $game['round-over'] = TRUE;
                 setGame($game);
             } else {
                 // Opponent has not yet drew a card, the current user should refresh until the other user drew

@@ -7,7 +7,8 @@
     $cards = $game[$playerKey]['cards'];
     $cardsCount = count($cards);
     // Draw the next card in the deck
-    $game[$_GET['player']."-card"] = $cards[$cardsCount - 1];
+    $game[$_GET['player']."-card"] = array_pop($cards);
+    $game[$playerKey]['cards'] = $cards;
 
     // Save the card you drew to the file
     setGame($game);

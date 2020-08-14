@@ -48,9 +48,9 @@
 
     // Check that the user is one of the users invited from the FaceAfkea app
     if ($loggedInUser['id'] === $player1['id']) {
-        $game_status['player1'] = ["id" => $loggedInUser["id"], "cards" => getShuffledDeck(5), "name" => $loggedInUser["name"]];
+        $game_status['player1'] = ["id" => $loggedInUser["id"], "cards" => [3, 4, 3, 5], "name" => $loggedInUser["name"]];
     } else if ($loggedInUser['id'] === $player2['id']) {
-        $game_status['player2'] = ["id" => $loggedInUser["id"], "cards" => getShuffledDeck(5), "name" => $loggedInUser["name"]];
+        $game_status['player2'] = ["id" => $loggedInUser["id"], "cards" => [2, 3, 1, 3], "name" => $loggedInUser["name"]];
     } else {
         // If the user is not one of the invited users, show him an error message
         echo "<div>You are currently not invited to a game</div>";

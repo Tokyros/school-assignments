@@ -1,8 +1,7 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
 import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from 'http-status-codes';
 
 import { paramMissingError } from '@shared/constants';
-import { User } from '@entities/User';
 import PostDao from '@daos/Post/PostDao';
 import { Post } from '@entities/Post';
 import { getRandomInt } from '@shared/functions';
@@ -69,7 +68,7 @@ router.post('/add-comment', async (req, res) => {
         ...post,
         comments: [...post.comments, {content: comment, author: user}]
     };
-    // Add new user
+
     await postDao.update(updatedPost);
     return res.status(CREATED).json(updatedPost).end();
 });
