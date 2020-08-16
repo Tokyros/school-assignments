@@ -12,12 +12,12 @@ router.use(formData.parse());
 
 router.post('/', (req, res) => {
     // Generate random id for image
-    const imageId = uuidV4();
     // Extract files from request body
     const values = Object.values(req.files);
 
     const paths = [];
     values.forEach((file) => {
+        const imageId = uuidV4();
         const extension = file.originalFilename.split('.').reverse()[0];
         // Copy the file to an exposed statics dir
         fs.copyFileSync(file.path, `${IMAGES_DIR}/${imageId}.${extension}`);
