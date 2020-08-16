@@ -26,8 +26,12 @@
 <?php
     require('./head.php');
 
+    // echo("My cards: <br>");
+    // print_r($game[$playerKey]['cards']);
+    // echo("<br>His cards:<br>");
+    // print_r($game[$otherPlayerKey]['cards']);
     // Check if the game is over, but only do it after the previous round is over
-    if (!$game['round-over'] && ($playerCardsLeft === 0 || $otherPlayerCardsLeft === 0)) {
+    if ($game['round-over'] && $myCard && $otherPlayerCard && ($playerCardsLeft === 0 || $otherPlayerCardsLeft === 0)) {
         // TIE
         if ($playerCardsLeft === 0 && $otherPlayerCardsLeft === 0) {
             echo "<div class=\"game-over\">The game is over, the result is a TIE.</div>";
@@ -79,14 +83,17 @@
                     // Only update cards array once when the round is over
                     if (!$game['round-over']) {
                         array_unshift($game[$playerKey]['cards'], $myCard, $otherPlayerCard);
-                        $game['round-over'] = TRUE;
                     }
                     echo "<div>You lose this round... 😢</div>";
                 } else if ($otherPlayerCard === $myCard) {
                     echo "<div class=\"round-results\">This round resulted in a TIE!</div>";
                 } else {
+                    if (!$game['round-over']) {
+                        array_unshift($game[$otherPlayerKey]['cards'], $myCard, $otherPlayerCard);
+                    }
                     echo "<div>You win this round! 🏆</div>";
                 }
+                $game['round-over'] = TRUE;
 
                 // Let players approve the results of the round, giving them a chance to see what happened
                 if (!$game[$playerKey."-round-approved"]) {
