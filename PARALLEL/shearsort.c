@@ -25,18 +25,19 @@ FILE *readFile(char *path)
     return fp;
 }
 
-void readFromTerminal(Triple* mat, FILE* input, int* size) {
-    mat = malloc(sizeof(Triple));
+Triple* readFromTerminal(FILE* input, int* size) {
+    Triple* mat = malloc(sizeof(Triple));
     int i = 0;
     int first, second, third;
     do {
         i++;
         mat = realloc(mat, (sizeof(Triple) * i));
-        scanf("%d %d %d $", &first, &second, &third);
+        fscanf(input, "%d %d %d $", &first, &second, &third);
         printf("ABOUT TO REALLOC\n");
         mat[i - 1] = (Triple){first, second, third};
     } while (fgetc(input) != EOF);
     *size = i;
+    return mat;
 }
 
 MPI_Comm initCartisianComm(int matDimension, int rank, int *coords)
@@ -227,13 +228,14 @@ int main(int argc, char *argv[])
     int size;
     if (rank == 0)
     {
-        readFromTerminal(mat, stdin, &size);
+        FILE* file = fopen("in.txt", "r");
+        mat = readFromTerminal(file, &size);
         // read from file
         printf("%d\n", size);
     }
 
     MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Comm comm = initCartisianComm(size, rank, coords);
+    MPI_Comm comm = initCartisianComm(size / 2, rank, coords);
 
     MPI_Scatter(mat, 1, mpi_triple_datatype, &triple, 1, mpi_triple_datatype, 0, comm);
 
