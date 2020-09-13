@@ -25,11 +25,13 @@ FILE *readFile(char *path)
     return fp;
 }
 
-Triple* readFromTerminal(FILE* input, int* size) {
-    Triple* mat = malloc(sizeof(Triple));
+Triple *readFromTerminal(FILE *input, int *size)
+{
+    Triple *mat = malloc(sizeof(Triple));
     int i = 0;
     int first, second, third;
-    do {
+    do
+    {
         i++;
         mat = realloc(mat, (sizeof(Triple) * i));
         fscanf(input, "%d %d %d $", &first, &second, &third);
@@ -215,27 +217,37 @@ int main(int argc, char *argv[])
         // ... read from STDIO
     }
 
-
-
-    Triple* mat;
+    Triple *mat;
     // Triple mat[size][size] = {
     //     {(Triple){1, 2, 3}, (Triple){10, 11, 12}, (Triple){13, 14, 15}},
     //     {(Triple){7, 8, 9}, (Triple){4, 5, 6}, (Triple){16, 17, 18}},
     //     {(Triple){19, 20, 21}, (Triple){22, 23, 24}, (Triple){25, 26, 27}},
     // };
 
-
     int size;
     if (rank == 0)
     {
-        FILE* file = fopen("in.txt", "r");
-        mat = readFromTerminal(file, &size);
+        FILE *file = NULL;
+        if (argc > 1)
+        {
+            file = fopen(argv[1], "r");
+            if (file == NULL)
+            {
+                printf("Couldn't read input file\n");
+            }
+        }
+        mat = readFromTerminal(file == NULL ? stdin : file, &size);
         // read from file
         printf("%d\n", size);
+        if ((int)sqrt(size) != sqrt(size))
+        {
+            printf("Number of items must be of the form n*n!\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
     }
 
     MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Comm comm = initCartisianComm(size / 2, rank, coords);
+    MPI_Comm comm = initCartisianComm(sqrt(size), rank, coords);
 
     MPI_Scatter(mat, 1, mpi_triple_datatype, &triple, 1, mpi_triple_datatype, 0, comm);
 
@@ -245,11 +257,30 @@ int main(int argc, char *argv[])
 
     if (rank == 0)
     {
+        for (int i = 0; i < sqrt(size); i++)
+        {
+            if (i % 2 == 0)
+            {
+                for (int z = 0; z < sqrt(size); z++)
+                {
+                    Triple oneTriple = mat[i + z];
+                    printf("even: (%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
+                }
+            } else {
+                for (int z = sqrt(size) - 1; z >= 0; z--)
+                {
+                    Triple oneTriple = mat[i + z];
+                    printf("odd: (%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
+                }
+            }
+        }
+
         for (int i = 0; i < size; i++)
         {
             Triple oneTriple = mat[i];
-            printf("(%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
+            printf("odd: (%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
         }
+        
     }
 
     MPI_Finalize();

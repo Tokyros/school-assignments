@@ -39,7 +39,8 @@ double calculateAnswer(int from, int to)
     return answer;
 }
 
-void distributeTasks(int proc_count) {
+void distributeTasks(int proc_count)
+{
     for (int procRank = 1; procRank < proc_count; procRank++)
     {
         // Distribute tasks evenly between processes (all except master)
@@ -53,7 +54,8 @@ void distributeTasks(int proc_count) {
 }
 
 // Receive responses back from slaves
-double collectTasks(int proc_count) {
+double collectTasks(int proc_count)
+{
     double answer = 0;
     for (int i = 1; i < proc_count; i++)
     {
@@ -65,7 +67,8 @@ double collectTasks(int proc_count) {
 }
 
 // Receive process task portion, execute it and send back the result
-void performTask() {
+void performTask()
+{
     Task task;
     // Receive the task from the master process
     MPI_Recv(&task, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -74,7 +77,6 @@ void performTask() {
     // Send value back to master process
     MPI_Send(&localAnswers, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 }
-
 
 void handleMasterProcess(int proc_count)
 {

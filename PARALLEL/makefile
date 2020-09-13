@@ -6,7 +6,7 @@ build:
 	mpicc -o exec-shearsort shearsort.o
 
 run_sort:
-	mpirun -n 4 ./exec-shearsort
+	mpirun -n 9 ./exec-shearsort in.txt
 
 run5:
 	mpirun -n 1 ./exec-sequential
