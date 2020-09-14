@@ -1,17 +1,12 @@
 build:
-	mpicc -c static.c dynamic.c sequential.c shearsort.c
-	mpicc -o exec-static static.o
-	mpicc -o exec-dynamic dynamic.o
-	mpicc -o exec-sequential sequential.o
+	mpicc -c shearsort.c
 	mpicc -o exec-shearsort shearsort.o
 
-run_sort:
-	mpirun -n 9 ./exec-shearsort in.txt
+run_sort_terminal_input:
+	mpirun -n 9 ./exec-shearsort
 
-run5:
-	mpirun -n 1 ./exec-sequential
-	mpirun -n 5 ./exec-static
-	mpirun -n 5 ./exec-dynamic
+run_sort_file_input:
+	mpirun -n 9 ./exec-shearsort in.txt
 
 clean:
 	rm *.o exec-*

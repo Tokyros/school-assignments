@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-// #define size 3
-
 typedef struct
 {
     int first;
@@ -25,20 +23,34 @@ FILE *readFile(char *path)
     return fp;
 }
 
-Triple *readFromTerminal(FILE *input, int *size)
+void printMatrix(Triple* mat, int size) {
+    for (int z = 0; z < size; z++)
+    {
+        printf("\t(%d, %d, %d)\t", mat[z].first,mat[z].second, mat[z].third);
+        if ((z + 1) % 3 == 0)
+        {
+            printf("\n");
+        }
+    }
+}
+
+Triple *readMatrixFromInput(FILE *input, int *size)
 {
     Triple *mat = malloc(sizeof(Triple));
     int i = 0;
     int first, second, third;
-    do
+
+    while(fscanf(input, "%d %d %d $", &first, &second, &third) == 3 && !feof(input))
     {
         i++;
         mat = realloc(mat, (sizeof(Triple) * i));
-        fscanf(input, "%d %d %d $", &first, &second, &third);
-        printf("ABOUT TO REALLOC\n");
         mat[i - 1] = (Triple){first, second, third};
-    } while (fgetc(input) != EOF);
+        
+    }
+
     *size = i;
+    mat = realloc(mat, (i * sizeof(Triple)));
+
     return mat;
 }
 
@@ -208,21 +220,7 @@ int main(int argc, char *argv[])
     MPI_Type_create_struct(3, block_lengths, displacements, types, &mpi_triple_datatype);
     MPI_Type_commit(&mpi_triple_datatype);
 
-    if (argc > 1)
-    {
-        // ... read file
-    }
-    else
-    {
-        // ... read from STDIO
-    }
-
     Triple *mat;
-    // Triple mat[size][size] = {
-    //     {(Triple){1, 2, 3}, (Triple){10, 11, 12}, (Triple){13, 14, 15}},
-    //     {(Triple){7, 8, 9}, (Triple){4, 5, 6}, (Triple){16, 17, 18}},
-    //     {(Triple){19, 20, 21}, (Triple){22, 23, 24}, (Triple){25, 26, 27}},
-    // };
 
     int size;
     if (rank == 0)
@@ -234,16 +232,25 @@ int main(int argc, char *argv[])
             if (file == NULL)
             {
                 printf("Couldn't read input file\n");
+                MPI_Abort(MPI_COMM_WORLD, 1);
             }
         }
-        mat = readFromTerminal(file == NULL ? stdin : file, &size);
-        // read from file
-        printf("%d\n", size);
+
+        if (file == NULL) {
+            printf("Enter your values as three numbers separated by white space\nafter each triplet there should be a $ sign\n");
+            printf("To finish entering your input press control+d key combination\n");
+        }
+
+        mat = readMatrixFromInput(file == NULL ? stdin : file, &size);
+
         if ((int)sqrt(size) != sqrt(size))
         {
             printf("Number of items must be of the form n*n!\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
+
+        printf("input matrix:\n");
+        printMatrix(mat, size);
     }
 
     MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -257,80 +264,29 @@ int main(int argc, char *argv[])
 
     if (rank == 0)
     {
+        printf("\noutput matrix:\n");
+        printMatrix(mat, size);
+
+        printf("\nSorted triplets:\n");
         for (int i = 0; i < sqrt(size); i++)
         {
             if (i % 2 == 0)
             {
                 for (int z = 0; z < sqrt(size); z++)
                 {
-                    Triple oneTriple = mat[i + z];
-                    printf("even: (%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
+                    Triple oneTriple = mat[(i * (int)sqrt(size)) + z];
+                    printf("(%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
                 }
             } else {
                 for (int z = sqrt(size) - 1; z >= 0; z--)
                 {
-                    Triple oneTriple = mat[i + z];
-                    printf("odd: (%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
+                    Triple oneTriple = mat[(i * (int)sqrt(size)) + z];
+                    printf("(%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
                 }
             }
-        }
-
-        for (int i = 0; i < size; i++)
-        {
-            Triple oneTriple = mat[i];
-            printf("odd: (%d %d %d)\n", oneTriple.first, oneTriple.second, oneTriple.third);
         }
         
     }
 
     MPI_Finalize();
 }
-
-// Cube* readFromFile(Cube* table, int* tableSize){
-// 	int size = 0;
-// 	FILE* file;
-// 	file = fopen("cuboids.dat","r");
-// 	table = (Cube*)malloc(size * sizeof(Cube));
-
-// 	if(file == NULL){
-// 		printf("Error ! could not open file\n");
-// 		exit(-1);
-// 	}
-
-// 	do{
-// 		size++;
-// 		table = (Cube*)realloc(table, size * sizeof(Cube));
-// 		fscanf(file, "%d %f %f %f", &(table[size-1].id), &(table[size-1]).length, &(table[size-1].width), &(table[size-1].height));
-// 		table[size-1].volume = table[size-1].length * table[size-1].width * table[size-1].height;
-// 	}while(fgetc(file) != EOF);
-
-// 	fflush(stdout);
-// 	*tableSize = size;
-// 	fclose(file);
-// 	return table;
-// }
-
-// void writeToFile(Cube* table, int tableSize){
-// 	int i,j,size;
-// 	FILE* file;
-// 	file = fopen("result.dat", "w+");
-// 	if(file == NULL){
-// 		printf("Error! could not open file\n");
-// 		exit(-1);
-// 	}
-// 	size = (int)sqrt(tableSize);
-
-// 	for(i = 0; i < size; i++){// Go Through All Rows
-
-// 		if(i % 2 == 0){ //Even Row - Left To Right
-// 			for(j = 0; j< size; j++){
-// 				fprintf(file, "%d ", table[size*i+j].id);
-// 			}
-// 		}else{ // Odd Row - Right To Left
-// 			for(j = size - 1; j >= 0; j--){
-// 				fprintf(file, "%d ", table[size*i+j].id);
-// 			}
-// 		}
-// 	}
-// 	fclose(file);
-// }

@@ -1,12 +1,12 @@
+Shahar Rosen - 204541791
+Roy Gazit - 308575133
+
 I have added a makefile to help run the different files
 
-run `make` to build all three files, then to run the files:
+run `make` to build shearsort.c:
 
-## Run sequential
-`mpirun -n 1 ./exec-sequential`
+## Run with input from file
+`make run_sort_file_input` or `mpirun -n 9 ./exec-shearsort in.txt`
 
-## Run static
-`mpirun -n 5 ./exec-static`
-
-## Run dynamic
-`mpirun -n 5 ./exec-dynamic`
+## Run with input from terminal
+`make run_sort_terminal_input` or `mpirun -n 9 ./exec-shearsort`
