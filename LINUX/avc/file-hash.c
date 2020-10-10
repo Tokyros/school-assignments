@@ -58,7 +58,6 @@ int main(int argc, char* argv[]) {
 
     char* fileContent = readFile(argv[1]);
     int contentLength = strlen(fileContent);
-    int* concatenatedNums = malloc(contentLength/2 * sizeof(int));
 
     int hash = 0;
 
@@ -68,5 +67,5 @@ int main(int argc, char* argv[]) {
     }
     
     free(fileContent);
-    fprintf(output, "%d\n", hash % 100000);
+    fprintf(output, "%d\n", hash);
 }
