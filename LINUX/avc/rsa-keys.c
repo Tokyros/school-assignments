@@ -34,6 +34,8 @@ int isPrime(long int num)
 
 int main(int argc, char* argv[]) {
     int p, q, n, phi, e, d;
+    FILE *public = fopen("key.pub", "w");
+    FILE *private = fopen("key.pri", "w");
 
     if (argc < 3) {
         printf("Error: Script expects two prime numbers passed as arguments\n");
@@ -68,4 +70,9 @@ int main(int argc, char* argv[]) {
 
     printf("Private key: (%d, %d)\n", n, e);
     printf("Public key: (%d, %d)\n", n, d);
+
+    fprintf(public, "%d %d", n, d);
+    fprintf(private, "%d %d", n, e);
+    fclose(public);
+    fclose(private);
 }

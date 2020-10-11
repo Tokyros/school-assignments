@@ -49,7 +49,7 @@ char* readFile(char fileName[]) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* output = stdout;
+    FILE* output = fopen("hash.txt", "w");
 
     if (output == NULL) {
         printf("Could not read output file\n");
@@ -68,4 +68,5 @@ int main(int argc, char* argv[]) {
     
     free(fileContent);
     fprintf(output, "%d\n", hash);
+    fclose(output);
 }

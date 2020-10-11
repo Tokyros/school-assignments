@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int power(int x, unsigned int y, int p) 
 { 
@@ -29,9 +30,32 @@ int main(int argc, char* argv[]) {
     //     printf("4: file to write encrypted/decrypted\n");
     //     exit(1);
     // }
+    int n, key_part, opt;
+    char temp;
+    if (argc < 2) {
+        printf("No key was passed!\n");
+        exit(EXIT_FAILURE);
+    }
+    char *keyName, *fileName;
 
-    int n = atoi(argv[1]);
-    int key_part = atoi(argv[2]);
+     while ((opt = getopt(argc, argv, "k:f:")) != -1) {
+        switch(opt) {
+            case 'k':
+                keyName = optarg;
+                break;
+            case 'f':
+                fileName = optarg;
+                break;
+            default:
+                fprintf(stderr, "Usage: %s [-k keyFileName] [-f fileName]\n", argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    FILE *key = fopen(keyName, "r");
+    FILE *file = fopen(fileName, "r");
+
+    fscanf(key, "%d %d", &n, &key_part);
 
     if (!n || !key_part) {
         printf("RSA key parts must be positive integers\n");
@@ -53,13 +77,13 @@ int main(int argc, char* argv[]) {
     // }
 
     char c;
-    while ((c = fgetc(stdin)) != EOF) {
+    while ((c = fgetc(file)) != EOF) {
         putc(power((unsigned char) c, key_part, n), stdout);
         // fputc(power((unsigned char) c, key_part, n), output);
     }
 
-    // fclose(output);
-    // fclose(input);
+    fclose(key);
+    fclose(file);
 
     // printf("Wrote encrypted message to %s\n", argv[4]);
 }
