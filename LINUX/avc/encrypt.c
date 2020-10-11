@@ -36,24 +36,28 @@ int main(int argc, char* argv[]) {
         printf("No key was passed!\n");
         exit(EXIT_FAILURE);
     }
-    char *keyName, *fileName;
+    char *keyName, *inputFileName, *outputFileName;
 
-     while ((opt = getopt(argc, argv, "k:f:")) != -1) {
+     while ((opt = getopt(argc, argv, "k:i:o:")) != -1) {
         switch(opt) {
             case 'k':
                 keyName = optarg;
                 break;
-            case 'f':
-                fileName = optarg;
+            case 'i':
+                inputFileName = optarg;
+                break;
+            case 'o':
+                outputFileName = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-k keyFileName] [-f fileName]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-k keyFileName] [-i inputFileName] [-o outputFileName]\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
 
     FILE *key = fopen(keyName, "r");
-    FILE *file = fopen(fileName, "r");
+    FILE *inputFile = fopen(inputFileName, "r");
+    FILE *outputFile = fopen(outputFileName, "w");
 
     fscanf(key, "%d %d", &n, &key_part);
 
@@ -77,13 +81,14 @@ int main(int argc, char* argv[]) {
     // }
 
     char c;
-    while ((c = fgetc(file)) != EOF) {
-        putc(power((unsigned char) c, key_part, n), stdout);
+    while ((c = fgetc(inputFile)) != EOF) {
+        putc(power((unsigned char) c, key_part, n), outputFile);
         // fputc(power((unsigned char) c, key_part, n), output);
     }
 
     fclose(key);
-    fclose(file);
+    fclose(inputFile);
+    fclose(outputFile);
 
     // printf("Wrote encrypted message to %s\n", argv[4]);
 }
