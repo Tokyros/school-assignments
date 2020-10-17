@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 #include <string.h>
 
 int concatenateNums(int x, int y) {
@@ -49,14 +50,36 @@ char* readFile(char fileName[]) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* output = fopen("hash.txt", "w");
+    int opt;
+    char *inputFileName, *outputFileName;
+
+    if (argc == 1) {
+        fprintf(stderr, "Usage: %s [-i inputFileName] [-o outputFileName]\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+        switch(opt) {
+            case 'i':
+                inputFileName = optarg;
+                break;
+            case 'o':
+                outputFileName = optarg;
+                break;
+            default:
+                fprintf(stderr, "Usage: %s [-i inputFileName] [-o outputFileName]\n", argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    FILE* output = fopen(outputFileName, "w");
 
     if (output == NULL) {
         printf("Could not read output file\n");
         exit(1);
     }
 
-    char* fileContent = readFile(argv[1]);
+    char* fileContent = readFile(inputFileName);
     int contentLength = strlen(fileContent);
 
     int hash = 0;

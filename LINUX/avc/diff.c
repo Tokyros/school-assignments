@@ -3,28 +3,16 @@
 #include <unistd.h>
 
 int main(int argc, char* argv[]) {
-    char *inputFileName;
-    char *outputFileName;
-    int opt;
     char c1;
     char c2;
 
-    while ((opt = getopt(argc, argv, "i:o:")) != -1) {
-        switch(opt) {
-            case 'i':
-                inputFileName = optarg;
-                break;
-            case 'o':
-                outputFileName = optarg;
-                break;
-            default:
-                fprintf(stderr, "Usage: %s [-i inputFileName] [-o outputFileName]\n", argv[0]);
-                exit(EXIT_FAILURE);
-        }
+    if (argc != 3) {
+        fprintf(stderr, "Wrong number of arguments passed, expected 2 arguments\nUsage: %s fileName fileName\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    FILE* f1 = fopen(inputFileName, "r");
-    FILE* f2 = fopen(outputFileName, "r");
+    FILE* f1 = fopen(argv[1], "r");
+    FILE* f2 = fopen(argv[2], "r");
 
     if (f1 == NULL || f2 == NULL) {
         printf("Could not read one of the files\n");
@@ -34,7 +22,6 @@ int main(int argc, char* argv[]) {
     while (c1 != EOF && c2 != EOF) {
         c1 = fgetc(f1);
         c2 = fgetc(f2);
-        printf("%c <-> %c\n", c1, c2);
         if (c1 != c2) {
             printf("Files do not match\n");
             exit(EXIT_SUCCESS);
