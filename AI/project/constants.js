@@ -1,6 +1,10 @@
 const dims = {
-    canvasWidth: 1100,
-    canvasHeight: 900
+    canvasWidth: 100,
+    canvasHeight: 100,
+    POINT_SIZE: 15,
 };
 
-export {dims};
+const WALL = 0;
+const FLOOR = 1;
+
+export {dims, WALL, FLOOR};
