@@ -1,18 +1,24 @@
+import { FLOOR, WALL } from './constants.js';
+import { Graph } from './astar.js';
+import { intersects } from './rooms.js';
 
-class Graph {
-    constructor(nodes) {
-        this.nodes = nodes;
-    }
-}
-
-
-
-function update(state) {
-    // calculate next move for each player:
-    // 1. Maybe change target (if health drops, if ammo drops)
-    // 2. Calculate path to target
-    // 3. if target is another player
-        // 1. if same room, shoot at target
-        // 2. else take one step
-    // 4. check intersection
-}
+export function generateGraph(width, height, rooms, connections) {
+    return new Graph(
+      new Array(width).fill(0).map((_, x) =>
+        new Array(height).fill(0).map((_, y) => {
+          if (
+            rooms.some((room) => {
+              return intersects(room, { x, y });
+            }) ||
+            connections.some(
+              (connection) => connection.x === x && connection.y === y
+            )
+          ) {
+            return FLOOR;
+          } else {
+            return WALL;
+          }
+        })
+      )
+    );
+  }

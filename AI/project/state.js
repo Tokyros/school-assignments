@@ -1,19 +1,24 @@
-// import {astar} from "./astar.js";
+import {astar} from "./astar.js";
 
 function movePlayers(state) {
-    const movedPlayers = state.players.map((player) => movePlayer(state.graph, player))
+    const movedPlayers = state.players.map((player) => {
+        return movePlayer(state.graph, player, player.target);
+    })
     return {
         ...state,
         players: movedPlayers
     };
 }
 
-function movePlayer(graph, player) {
-    const toTarget = player.target;
+function movePlayer(graph, player, target) {
+    const toTarget = target;
+    player//?
+    target//?
     const fromNode = graph.grid[player.x][player.y];
     const toNode = graph.grid[toTarget.x][toTarget.y];
     
-    const path = astar.search(graph, fromNode, toNode).filter((node) => !(node.x === fromNode.x && node.y === fromNode.y));
+
+    const path = astar.search(graph, fromNode, toNode);
 
     if (path.length) {
         const nextStep = path[0];
@@ -83,9 +88,7 @@ export function update(state) {
     const stateWithUpdatedHealth = maybeTakeHealth(stateWithNewPositions);
     const stateWithUpdatedAmmo = maybeTakeAmmo(stateWithUpdatedHealth);
 
-    // const player1Room = state.rooms.findIndex((room) => isInRoom(room, state.players[0]));
-    // const player2Room = state.rooms.findIndex((room) => isInRoom(room, state.players[1]));
-    // const notSameRoom = (player1Room === -1 || player2Room === -1) || player1Room !== player2Room;
+    
 
     return stateWithUpdatedAmmo;
 }
