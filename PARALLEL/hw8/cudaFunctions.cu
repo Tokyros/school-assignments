@@ -1,137 +1,68 @@
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
-#include "myProto.h"
+#include "cudaFunctions.h"
 
-__global__ void countDigitViaCuda(int *data, int *countFromCUDA, int numPartElements) {
+__global__ void generateHistograms(int *data, int *hist, int maxIndexToProcess) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (i < numPartElements) {
-		countFromCUDA[data[i] + i * INPUT_MAX_VALUE]++;
+	// Handle task overflow
+	if (i < maxIndexToProcess) {
+		// Increment the current value in the thread's histogram
+		hist[data[i] + i * INPUT_MAX_VALUE]++;
 	}
 }
 
-__global__ void uniteSameDigitsViaCuda(int *countFromCUDA, int *totalCount, int numPartElements) {
+__global__ void combineHistograms(int *from, int *to, int dataToProceess) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
+	// Handle task overflow
 	if (i < INPUT_MAX_VALUE) {
-		for (int j = 0; j < PART; j++) {
-			totalCount[i] += countFromCUDA[i + j * INPUT_MAX_VALUE];
+		// Collect the histograms of each thread into the final histogram
+		for (int j = 0; j < dataToProceess; j++) {
+			to[i] += from[i + j * INPUT_MAX_VALUE];
 		}
 	}
 }
 
-int computeOnGPU(int *data, int *totalCount, int *countFromCUDA, int numPartElements, int rangeNumbers, int numberMultThreads){
+int computeOnGPU(int *data, int *totalCount, int elementsToProcess, int numberMultThreads){
 	
-	cudaError_t err = cudaSuccess; //Error code to check return values for CUDA calls
+	int CUDAHist[INPUT_MAX_VALUE * elementsToProcess] = {0};
 
-	//Define all size_t  
-	size_t sizeNumberElements = numPartElements * sizeof(float);
-	size_t sizeNumberRange = rangeNumbers * sizeof(float);
-	size_t sizeNumberMultThreads = numberMultThreads * sizeof(float);
+	// Transfare data to GPU
+	int *device_data;
+	size_t sizeNumberElements = elementsToProcess * sizeof(float);
+	cudaMalloc((void**) &device_data, sizeNumberElements);
+	cudaMemcpy(device_data, data, sizeNumberElements, cudaMemcpyHostToDevice);
+	
+	int *device_hist_result;
+	size_t sizeNumberRange = INPUT_MAX_VALUE * sizeof(float);
+	cudaMalloc((void**) &device_hist_result, sizeNumberRange);
+	cudaMemcpy(device_hist_result, totalCount, sizeNumberRange, cudaMemcpyHostToDevice);
+	
+	int *device_hist_per_thread;
+	size_t sizeNumberMultThreads = INPUT_MAX_VALUE * elementsToProcess * sizeof(float);
+	cudaMalloc((void**) &device_hist_per_thread, sizeNumberMultThreads);
+	cudaMemcpy(device_hist_per_thread, CUDAHist, sizeNumberMultThreads, cudaMemcpyHostToDevice);
 
-	//Allocate memory on GPU to copy the data from the host
-	int *d_A;
-	err = cudaMalloc((void**) &d_A, sizeNumberElements);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to allocate device memory - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Allocate memory on GPU to copy the data from the host
-	int *d_B;
-	err = cudaMalloc((void**) &d_B, sizeNumberRange);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to allocate device memory - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Allocate memory on GPU to copy the data from the host
-	int *d_C;
-	err = cudaMalloc((void**) &d_C, sizeNumberMultThreads);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to allocate device memory - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Copy data from host to the GPU memory
-	err = cudaMemcpy(d_A, data, sizeNumberElements, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to copy data from host to device - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Copy data from host to the GPU memory
-	err = cudaMemcpy(d_B, totalCount, sizeNumberRange, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to copy data from host to device - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Copy data from host to the GPU memory
-	err = cudaMemcpy(d_C, countFromCUDA, sizeNumberMultThreads, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to copy data from host to device - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Launch the Kernel to count Digit From Each Process
+	// Generate the histograms per thread
 	int threadsPerBlock = 32;
-	int blocksPerGrid = (numPartElements + threadsPerBlock - 1) / threadsPerBlock;
-	countDigitViaCuda<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_C, numPartElements);
-	err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to launch vectorAdd kernel -  %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	int blocksPerGrid = (elementsToProcess + threadsPerBlock - 1) / threadsPerBlock;
+	generateHistograms<<<blocksPerGrid, threadsPerBlock>>>(device_data, device_hist_per_thread, elementsToProcess);
 
-	//Launch the Kernel to sum the solution from all the threads
+	// Combine the histograms from each thread into the final result
 	threadsPerBlock = 32;
 	blocksPerGrid = (INPUT_MAX_VALUE + threadsPerBlock - 1) / threadsPerBlock;
-	uniteSameDigitsViaCuda<<<blocksPerGrid, threadsPerBlock>>>(d_C, d_B, INPUT_MAX_VALUE);
-	err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to launch vectorAdd kernel -  %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	combineHistograms<<<blocksPerGrid, threadsPerBlock>>>(device_hist_per_thread, device_hist_result, elementsToProcess);
 
-	//Copy the result from GPU to the host memory.
-	err = cudaMemcpy(data, d_A, sizeNumberElements, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to copy result array from device to host -%s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	// Copt data back to host
+	cudaMemcpy(data, device_data, sizeNumberElements, cudaMemcpyDeviceToHost);
+	cudaMemcpy(totalCount, device_hist_result, sizeNumberRange, cudaMemcpyDeviceToHost);
+	cudaMemcpy(CUDAHist, device_hist_per_thread, sizeNumberMultThreads,cudaMemcpyDeviceToHost);
 
-	//Copy the result from GPU to the host memory.
-	err = cudaMemcpy(totalCount, d_B, sizeNumberRange, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to copy result array from device to host -%s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Copy the result from GPU to the host memory.
-	err = cudaMemcpy(countFromCUDA, d_C, sizeNumberMultThreads,cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess) {
-		fprintf(stderr, "Failed to copy result array from device to host -%s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Free allocated memory on GPU
-	if (cudaFree(d_A) != cudaSuccess) {
-		fprintf(stderr, "Failed to free device data - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Free allocated memory on GPU
-	if (cudaFree(d_B) != cudaSuccess) {
-		fprintf(stderr, "Failed to free device data - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
-
-	//Free allocated memory on GPU
-	if (cudaFree(d_C) != cudaSuccess) {
-		fprintf(stderr, "Failed to free device data - %s\n", cudaGetErrorString(err));
-		exit(EXIT_FAILURE);
-	}
+	// Free memory
+	cudaFree(device_data);
+	cudaFree(device_hist_result);
+	cudaFree(device_hist_per_thread);
 
 	return 0;
 }
