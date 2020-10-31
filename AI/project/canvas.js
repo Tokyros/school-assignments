@@ -39,6 +39,7 @@ export function drawPlayers(ctx, players) {
 export function drawBullets(ctx, players) {
   players.forEach((player) => {
     const bullet = player.bullet;
+    console.log(player)
     if (bullet) {
       ctx.fillStyle = "black";
       ctx.beginPath();

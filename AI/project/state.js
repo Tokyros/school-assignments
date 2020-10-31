@@ -55,6 +55,7 @@ function maybeTakeHealth(state) {
       (node) => node.x === player.x && node.y === player.y
     );
     if (maybeHealthNodeIdx >= 0) {
+      player.target.type = 'health';
       healthTaken.push(maybeHealthNodeIdx);
     }
     const newHealth =
@@ -124,13 +125,20 @@ function maybeUpdatePlayerHealth(state) {
             }, bullet);
         });
 
+        // TODO: decide if 'undefined' is the way we want to convey target death
+        const target = player.target.health === 0 ? undefined : player.target;
+
         if (hittingBullets.length) {
             return {
                 ...player,
                 health: player.health - hittingBullets.length * 10,
+                target
             }
         } else {
-            return player;
+            return {
+              ...player,
+              target
+            };
         }
     })
 
@@ -151,8 +159,11 @@ export function update(state) {
     ...stateWithUpdatedPlayerHealth,
     players: stateWithUpdatedPlayerHealth.players.map((player, playerIdx, players) => {
       const target = player.target;
-      if (target.type !== 'enemy') {
-          return player;
+      if (!target || target.type !== 'enemy') {
+          return {
+            ...player,
+            bullet: undefined
+          };
       }
       if (inSameRoom(player, target, stateWithUpdatedAmmo.rooms)) {
         const bullet = player.bullet;
@@ -190,7 +201,6 @@ export function update(state) {
               )
             );
           });
-
           return {
             ...player,
             bullet: hit ? undefined : {
