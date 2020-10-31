@@ -5,24 +5,19 @@ import { connectRooms, intersects, generateRandomRooms } from "./rooms.js";
 import { generateGraph } from "./graph";
 import { dims } from "./constants";
 
-export const rooms = generateRandomRooms(2, 10, 10);
+export const rooms = generateRandomRooms(2, 10, 10, 40, 40);
 
 const player1 = {
   x: rooms[0].x1 + 10,
   y: rooms[0].y1 + 10,
-  target: {
-      x: rooms[1].x1 + 15,
-      y: rooms[1].y1 + 15
-  },
+  target: 1,
 };
 
 const player2 = {
   x: rooms[1].x1 + 10,
   y: rooms[1].y1 + 10,
-  target: player1,
+  target: 0,
 };
-
-player1.target = player2;
 
 // const player3 = {
 //   x: rooms[2].x1 + 10,
@@ -36,8 +31,6 @@ player1.target = player2;
 //   target: player3,
 // };
 
-
-player1.target = player2;
 
 const freeForAllGraph = new Graph(
   new Array(dims.canvasWidth).fill(0).map((_, x) =>
@@ -150,9 +143,10 @@ describe("game state", () => {
 
   it.only("takes a long walk", () => {
     const state = {
-      graph: new Graph(new Array(55).fill(0).map(() => new Array(55).fill(1))),
+      graph: new Graph(new Array(30).fill(0).map(() => new Array(30).fill(1))),
       players: [
         player1,
+        player2
       ],
       health: [],
       ammo: [],
@@ -163,7 +157,7 @@ describe("game state", () => {
       newState = update(newState);
     }
 
-    expect(newState.players[0].x).toEqual(50);
-    expect(newState.players[0].y).toEqual(50);
+    expect(newState.players[0].x).toEqual(newState.players[1].x);
+    expect(newState.players[0].y).toEqual(newState.players[1].y);
   });
 });

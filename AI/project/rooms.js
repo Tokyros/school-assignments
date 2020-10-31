@@ -2,17 +2,17 @@ import { astar } from './astar.js';
 import { dims } from './constants.js';
 
 
-// export const rooms = [
-//   { x1: 137, y1: 405, x2: 257, y2: 510 },
-//   { x1: 1, y1: 532, x2: 169, y2: 688 },
-//   { x1: 202, y1: 80, x2: 431, y2: 216 },
-//   { x1: 900, y1: 3, x2: 1085, y2: 216 },
-//   { x1: 896, y1: 440, x2: 1052, y2: 646 },
-//   { x1: 538, y1: 513, x2: 768, y2: 759 },
-//   { x1: 513, y1: 257, x2: 663, y2: 470 },
-// ];
+export const rooms = [
+  { x1: 137, y1: 405, x2: 257, y2: 510 },
+  { x1: 1, y1: 532, x2: 169, y2: 688 },
+  { x1: 202, y1: 80, x2: 431, y2: 216 },
+  { x1: 900, y1: 3, x2: 1085, y2: 216 },
+  { x1: 896, y1: 440, x2: 1052, y2: 646 },
+  { x1: 538, y1: 513, x2: 768, y2: 759 },
+  { x1: 513, y1: 257, x2: 663, y2: 470 },
+];
 
-export const rooms = generateRandomRooms(2, 10, 10);
+// export const rooms = generateRandomRooms(10, 10, 10, 10, 10);
 
 function roomsIntersect(roomA, roomB) {
     // no horizontal overlap
@@ -33,14 +33,14 @@ function contains(b) {
 	);
 }
 
-export function generateRandomRooms(roomCount, minDim, maxDim) {
+export function generateRandomRooms(roomCount, minDim, maxDim, canvasWidth, canvasHeight) {
   let rooms = [];
   for (let roomIdx = 0; roomIdx < roomCount; roomIdx++) {
     let roomIntersect = true;
     let roomCandidate;
     while (roomIntersect) {
-      const x1 = Math.floor(Math.random() * dims.canvasWidth);
-      const y1 = Math.floor(Math.random() * dims.canvasHeight);
+      const x1 = Math.floor(Math.random() * canvasWidth);
+      const y1 = Math.floor(Math.random() * canvasHeight);
       const x2 = x1 + (Math.floor(Math.random() * maxDim) + minDim);
       const y2 = y1 + (Math.floor(Math.random() * maxDim) + minDim);
       roomCandidate = {
@@ -103,5 +103,5 @@ export function connectRooms(graph, rooms) {
     });
   });
 
-  return connections;
+  return connections.map((connection) => ({x: connection.x, y: connection.y}));
 }

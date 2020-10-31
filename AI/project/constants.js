@@ -1,6 +1,6 @@
 const dims = {
-    canvasWidth: 100,
-    canvasHeight: 100,
+    canvasWidth: 1100,
+    canvasHeight: 1100,
     POINT_SIZE: 15,
 };
 

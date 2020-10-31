@@ -27,8 +27,30 @@ export function drawFloor(ctx, nodes) {
 }
 
 export function drawPlayers(ctx, players) {
-  players.map((node) => {
-    ctx.fillStyle = "red";
-    ctx.fillRect(node.x, node.y, dims.POINT_SIZE, dims.POINT_SIZE);
+  players.map((player, idx) => {
+    ctx.fillStyle = player.team === 1 ? "red" : "blue";
+    ctx.fillRect(player.x, player.y, dims.POINT_SIZE, dims.POINT_SIZE);
+    ctx.fillStyle = "white";
+    ctx.fillText(`${idx}`, player.x + 5, player.y + 10);
+    ctx.fillText(`${player.health}`, player.x + 5, player.y + 15);
   });
+}
+
+export function drawBullets(ctx, players) {
+  players.forEach((player) => {
+    const bullet = player.bullet;
+    if (bullet) {
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.arc(bullet.x, bullet.y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  });
+}
+
+export function drawHealth(ctx, healths) {
+  healths.forEach((health) => {
+    ctx.fillStyle = "green";
+    ctx.fillRect(health.x, health.y, dims.POINT_SIZE, dims.POINT_SIZE);
+  })
 }
