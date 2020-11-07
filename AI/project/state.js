@@ -12,26 +12,56 @@ function movePlayers(state) {
 }
 
 function inSameRoom(pointA, pointB, rooms) {
-  const fromNodeRoom = rooms.find((room) => intersects(room, pointA));
-  const toNodeRoom = rooms.find((room) => intersects(room, pointB));
+  const fromNodeRoom = rooms.find((room) => intersects(room, {
+    x: pointA.x + 5,
+    y: pointA.y + 5
+  }));
+  const toNodeRoom = rooms.find((room) => intersects(room, {
+    x: pointB.x + 5,
+    y: pointA.y + 5
+  }));
+  console.log(fromNodeRoom, toNodeRoom)
 
   return toNodeRoom && fromNodeRoom && fromNodeRoom.x1 === toNodeRoom.x1;
+}
+
+function pickNewTarget(player, players) {
+  let randomPlayerIdx = -1;
+  let randomPlayer = players[randomPlayerIdx];
+  while (!randomPlayer || randomPlayer?.team === player.team || !randomPlayer.dead) {
+    randomPlayerIdx = Math.floor(Math.random() * Math.floor(players.length));
+    console.log('IDX', randomPlayerIdx)
+    randomPlayer = players[randomPlayerIdx];
+  }
+  return randomPlayer;
 }
 
 function movePlayer(graph, player, players, rooms) {
   const toTarget = player.target;
   const fromNode = graph.grid[player.x][player.y];
   const toNode = graph.grid[toTarget.x][toTarget.y];
+  if (player.dead) {
+    return player;
+  }
 
-  const fromNodeRoom = rooms.find((room) => intersects(room, fromNode));
-  const toNodeRoom = rooms.find((room) => intersects(room, toNode));
+  const fromNodeRoom = rooms.find((room) => intersects(room, {
+    x: fromNode.x + 5,
+    y: fromNode.y + 5
+  }));
+  const toNodeRoom = rooms.find((room) => intersects(room, {
+    x: toNode.x + 5,
+    y: toNode.y + 5
+  }));
 
   // In order for player not to meet inside a corridor
   const targetIsTransferringRooms = toNodeRoom === undefined;
   const targetInSameRoom =
     toNodeRoom && fromNodeRoom && fromNodeRoom.x1 === toNodeRoom.x1;
   const shouldStand = targetIsTransferringRooms || targetInSameRoom;
-  if (toTarget.type !== 'health' && shouldStand) return player;
+
+  if (toTarget.type === 'done' || (toTarget.type !== 'health' && shouldStand)) {
+    return player;
+  }
 
   const path = astar.search(graph, fromNode, toNode);
 
@@ -55,7 +85,6 @@ function maybeTakeHealth(state) {
       (node) => node.x === player.x && node.y === player.y
     );
     if (maybeHealthNodeIdx >= 0) {
-      player.target.type = 'health';
       healthTaken.push(maybeHealthNodeIdx);
     }
     const newHealth =
@@ -112,143 +141,140 @@ function isInRoom(room, player) {
 }
 
 function maybeUpdatePlayerHealth(state) {
-    const bullets = state.players.reduce((acc, player) => {
-        return player.bullet ? [...acc, {...player.bullet, from: player.name}] : acc;
-    }, []);
-    const playersWithUpdatedHealth = state.players.map((player) => {
-        const hittingBullets = bullets.filter((bullet) => {
-            return bullet.from !== player.name && intersects({
-                x1: player.x - 5,
-                  y1: player.y - 5,
-                  x2: player.x + 15,
-                  y2: player.y + 15,
-            }, bullet);
-        });
-
-        // TODO: decide if 'undefined' is the way we want to convey target death
-        const target = player.target.health === 0 ? undefined : player.target;
-
-        if (hittingBullets.length) {
-            return {
-                ...player,
-                health: player.health - hittingBullets.length * 10,
-                target
-            }
-        } else {
-            return {
-              ...player,
-              target
-            };
-        }
-    })
+  const bullets = state.players.reduce((acc, player, idx) => {
+    return player.bullet ? [...acc, { ...player.bullet, from: idx }] : acc;
+  }, []);
+  let hittingBulletsPlayers = new Set();
+  const playersWithUpdatedHealth = state.players.map((player, idx) => {
+    const hittingBullets = bullets.filter((bullet) => {
+      return idx !== bullet.from && intersects({
+        x1: player.x,
+        y1: player.y,
+        x2: player.x + 20,
+        y2: player.y + 20,
+      }, bullet);
+    }).map((bullet) => bullet.from);
+    hittingBulletsPlayers.add(...hittingBullets);
 
     return {
-        ...state,
-        players: playersWithUpdatedHealth
+      ...player,
+      health: player.health - hittingBullets.length * 10,
     }
+  })
+
+  return {
+    ...state,
+    players: playersWithUpdatedHealth.map((player, idx) => {
+      return hittingBulletsPlayers.has(idx) ? { ...player, bullet: undefined } : player;
+    }).map((player) => player.health > 0 ? player : {
+      ...player,
+      dead: true
+    })
+  }
+}
+
+function maybeShootBullets(state) {
+  const players = state.players;
+
+  const playersWithShotBullets = players.map((player, idx) => {
+    const target = player.target;
+    if (!player.dead && target.type === 'enemy' && target.health > 0 && !player.bullet && inSameRoom(player, target, state.rooms)) {
+      console.log(player.name + " Shot")
+      const targetY = target.y + 5;
+      const targetX = target.x + 5;
+      const bulletX = player.x + 5;
+      const bulletY = player.y + 5;
+      const slope = (targetY - bulletY) / (targetX - bulletX);
+      const direction = targetX !== bulletX
+        ? Math.atan(slope)
+        : (bulletY > targetY ? 1/2 * Math.PI : 3/2 * Math.PI);
+      const directionX = (bulletX > targetX ? -1 : 1) * Math.cos(direction);
+      const directionY = (bulletY > targetY ? 1 : -1) * Math.sin(direction);
+      const directionYForEqualX = (bulletY > targetY ? -1 : 1);
+
+      return {
+        ...player,
+        bullet: {
+          x: bulletX,
+          y: bulletY,
+          direction: {
+            x: directionX,
+            y: bulletX === targetX ? directionYForEqualX : directionY
+          }
+        }
+      }
+    }
+
+    return player;
+  });
+
+  return {
+    ...state,
+    players: playersWithShotBullets
+  }
+}
+
+function updateBulletsPositions(state) {
+  return {
+    ...state,
+    players: state.players.map((player, playerIdx, players) => {
+      const bullet = player.bullet;
+      if (bullet) {
+        const nextBulletPosition = {
+          x: bullet.x + bullet.direction.x,
+          y: bullet.y + bullet.direction.y,
+        };
+
+        const bulletOutOfBounds = state.rooms.every((room) => !intersects(room, nextBulletPosition));
+
+        return {
+          ...player,
+          bullet: bulletOutOfBounds ? undefined : {
+            ...bullet,
+            ...nextBulletPosition,
+          },
+        };
+      } else {
+        return player;
+      }
+    }),
+  };
+}
+
+function maybeUpdateTargets(state) {
+  const updatedPlayers = state.players.map((player, idx, players) => {
+    if (player.health < 50 && state.health.length > 0) {
+      return {
+        ...player,
+        target: {
+          ...state.health[0],
+          type: 'health'
+        },
+      }
+    } else {
+      return {
+        ...player,
+        target: {
+          type: 'enemy',
+          ...players[player.enemy]
+        },
+      };
+    }
+  });
+  return {
+    ...state,
+    players: updatedPlayers
+  }
 }
 
 export function update(state) {
   const stateWithNewPositions = movePlayers(state);
   const stateWithUpdatedHealth = maybeTakeHealth(stateWithNewPositions);
   const stateWithUpdatedAmmo = maybeTakeAmmo(stateWithUpdatedHealth);
-
   const stateWithUpdatedPlayerHealth = maybeUpdatePlayerHealth(stateWithUpdatedAmmo);
+  const stateWithUpdatedTargets = maybeUpdateTargets(stateWithUpdatedPlayerHealth);
+  const stateWithShotBullets = maybeShootBullets(stateWithUpdatedTargets);
+  const stateWithUpdatedBullets = updateBulletsPositions(stateWithShotBullets);
 
-  const stateWithUpdatedBullets = {
-    ...stateWithUpdatedPlayerHealth,
-    players: stateWithUpdatedPlayerHealth.players.map((player, playerIdx, players) => {
-      const target = player.target;
-      if (!target || target.type !== 'enemy') {
-          return {
-            ...player,
-            bullet: undefined
-          };
-      }
-      if (inSameRoom(player, target, stateWithUpdatedAmmo.rooms)) {
-        const bullet = player.bullet;
-        if (bullet) {
-          const direction =
-            bullet.direction ||
-            Math.atan(
-              (bullet.targetY - bullet.y) / (bullet.targetX - bullet.x)
-            );
-          if (!bullet.direction) {
-            console.log(direction);
-          }
-          bullet.direction = direction;
-
-          const nextBulletPosition = {
-            x:
-              bullet.x +
-              (bullet.x > bullet.targetX ? -1 : 1) * Math.cos(direction),
-            y:
-              bullet.y +
-              (bullet.y > bullet.targetY ? 1 : -1) * Math.sin(direction),
-          };
-
-          const hit = players.find((player, idx) => {
-            return (
-              idx != playerIdx &&
-              intersects(
-                {
-                  x1: player.x - 5,
-                  y1: player.y - 5,
-                  x2: player.x + 15,
-                  y2: player.y + 15,
-                },
-                bullet
-              )
-            );
-          });
-          return {
-            ...player,
-            bullet: hit ? undefined : {
-              ...bullet,
-              ...nextBulletPosition,
-            },
-          };
-        } else {
-          return {
-            ...player,
-            bullet: {
-              x: player.x + 5,
-              y: player.y + 5,
-              targetX: target.x + 5,
-              targetY: target.y + 5,
-            },
-          };
-        }
-      } else {
-        return player;
-      }
-    }),
-  };
-
-  const updatedTargets = stateWithUpdatedBullets.players.map((player, idx, players) => {
-      if (player.health < 50 && stateWithUpdatedBullets.health.length > 0) {
-          return {
-              ...player,
-              target: {
-                  ...stateWithUpdatedBullets.health[0],
-                  type: 'health'
-                },
-          }
-      } else {
-          return {
-              ...player,
-              target: {
-                  type: 'enemy',
-                  ...players[player.enemy]
-                },
-            };
-      }
-  })
-
-  return {
-      ...stateWithUpdatedBullets,
-      players: updatedTargets.filter((player) => {
-        return player.health > 0;
-      })
-  }
+  return stateWithUpdatedBullets;
 }

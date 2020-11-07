@@ -9,7 +9,7 @@ export function initCanvas(id, width, height) {
 
 export function drawRooms(ctx, rooms) {
   rooms.forEach((room) => {
-    ctx.fillStyle = "gray";
+    ctx.fillStyle = "purple";
     ctx.fillRect(
       room.x1,
       room.y1,
@@ -21,7 +21,7 @@ export function drawRooms(ctx, rooms) {
 
 export function drawFloor(ctx, nodes) {
   nodes.forEach((node) => {
-    ctx.fillStyle = "gray";
+    ctx.fillStyle = "yellow";
     ctx.fillRect(node.x, node.y, dims.POINT_SIZE, dims.POINT_SIZE);
   });
 }
@@ -29,6 +29,9 @@ export function drawFloor(ctx, nodes) {
 export function drawPlayers(ctx, players) {
   players.map((player, idx) => {
     ctx.fillStyle = player.team === 1 ? "red" : "blue";
+    if (player.dead) {
+      ctx.fillStyle = 'black';
+    }
     ctx.fillRect(player.x, player.y, dims.POINT_SIZE, dims.POINT_SIZE);
     ctx.fillStyle = "white";
     ctx.fillText(`${idx}`, player.x + 5, player.y + 10);
@@ -39,9 +42,9 @@ export function drawPlayers(ctx, players) {
 export function drawBullets(ctx, players) {
   players.forEach((player) => {
     const bullet = player.bullet;
-    console.log(player)
+    // console.log(player)
     if (bullet) {
-      ctx.fillStyle = "black";
+      ctx.fillStyle = player.team === 1 ? "red" : "blue";
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, 3, 0, 2 * Math.PI);
       ctx.fill();

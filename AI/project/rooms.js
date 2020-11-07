@@ -85,8 +85,9 @@ export function connectRooms(graph, rooms) {
         roomAKey === roomBKey;
 
       if (!alreadyConnected) {
-        const roomANode = graph.grid[roomA.x1][roomA.y1];
-        const roomBNode = graph.grid[roomB.x1][roomB.y1];
+        const middle = ({x1, x2, y1, y2}) => ({x: Math.floor((x1 + x2)/2), y: Math.floor((y1 + y2)/2)})
+        const roomANode = graph.grid[middle(roomA).x][middle(roomA).y];
+        const roomBNode = graph.grid[middle(roomB).x][middle(roomB).y];
         const path = astar.search(graph, roomANode, roomBNode);
 
         const existingConnections = [
