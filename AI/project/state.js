@@ -1,5 +1,5 @@
 import { astar } from "./astar.js";
-import { intersects } from "./rooms.js";
+import { generateRandomRooms, intersects } from "./rooms.js";
 
 function movePlayers(state) {
   const movedPlayers = state.players.map((player) => {
@@ -12,17 +12,16 @@ function movePlayers(state) {
 }
 
 function inSameRoom(pointA, pointB, rooms) {
-  const fromNodeRoom = rooms.find((room) => intersects(room, {
+  const fromNodeRoom = rooms.findIndex((room) => intersects(room, {
     x: pointA.x + 5,
     y: pointA.y + 5
   }));
-  const toNodeRoom = rooms.find((room) => intersects(room, {
+  const toNodeRoom = rooms.findIndex((room) => intersects(room, {
     x: pointB.x + 5,
-    y: pointA.y + 5
+    y: pointB.y + 5
   }));
-  console.log(fromNodeRoom, toNodeRoom)
 
-  return toNodeRoom && fromNodeRoom && fromNodeRoom.x1 === toNodeRoom.x1;
+  return toNodeRoom >= 0 && fromNodeRoom >= 0 && fromNodeRoom === toNodeRoom;
 }
 
 function pickNewTarget(player, players) {
@@ -30,7 +29,6 @@ function pickNewTarget(player, players) {
   let randomPlayer = players[randomPlayerIdx];
   while (!randomPlayer || randomPlayer?.team === player.team || !randomPlayer.dead) {
     randomPlayerIdx = Math.floor(Math.random() * Math.floor(players.length));
-    console.log('IDX', randomPlayerIdx)
     randomPlayer = players[randomPlayerIdx];
   }
   return randomPlayer;
@@ -40,6 +38,7 @@ function movePlayer(graph, player, players, rooms) {
   const toTarget = player.target;
   const fromNode = graph.grid[player.x][player.y];
   const toNode = graph.grid[toTarget.x][toTarget.y];
+
   if (player.dead) {
     return player;
   }
@@ -55,20 +54,41 @@ function movePlayer(graph, player, players, rooms) {
 
   // In order for player not to meet inside a corridor
   const targetIsTransferringRooms = toNodeRoom === undefined;
-  const targetInSameRoom =
-    toNodeRoom && fromNodeRoom && fromNodeRoom.x1 === toNodeRoom.x1;
-  const shouldStand = targetIsTransferringRooms || targetInSameRoom;
-
-  if (toTarget.type === 'done' || (toTarget.type !== 'health' && shouldStand)) {
-    return player;
+  const targetInSameRoom = toNodeRoom && fromNodeRoom && fromNodeRoom.x1 === toNodeRoom.x1;
+  if (targetIsTransferringRooms) {
+    const roomsAlongPath = (player.entirePath || []).reduce((pathRooms, point) => {
+      const maybeRoom = rooms.find((room) => intersects(room, point));
+      if (maybeRoom) {
+        pathRooms.add(maybeRoom)
+      }
+      return pathRooms;
+    }, new Set());
+    if (roomsAlongPath.size <= 2) {
+      // return player;
+    }
   }
 
-  const path = astar.search(graph, fromNode, toNode);
+  const shouldStand = targetInSameRoom;
+
+  if (toTarget.type === 'enemy' && shouldStand) {
+    // return player;
+  }
+
+  let path;
+  let entirePath = player.entirePath || [];
+  if (player.path && player.path.length > 0) {
+    path = player.path
+  } else {
+    path = astar.search(graph, fromNode, toNode);
+    entirePath = path;
+  }
 
   if (path.length) {
     const nextStep = path[0];
     return {
       ...player,
+      path: path.slice(1, 100),
+      entirePath,
       x: nextStep.x,
       y: nextStep.y,
     };
@@ -127,17 +147,8 @@ function maybeTakeAmmo(state) {
   return {
     ...state,
     players: playersWithUpdatedAmmo,
-    ammo: state.health.filter((_, idx) => !ammoTaken.includes(idx)),
+    ammo: state.ammo.filter((_, idx) => !ammoTaken.includes(idx)),
   };
-}
-
-function isInRoom(room, player) {
-  return (
-    room.x1 <= player.x &&
-    room.x2 >= player.x &&
-    room.y1 <= player.y &&
-    room.y2 >= player.y
-  );
 }
 
 function maybeUpdatePlayerHealth(state) {
@@ -147,7 +158,8 @@ function maybeUpdatePlayerHealth(state) {
   let hittingBulletsPlayers = new Set();
   const playersWithUpdatedHealth = state.players.map((player, idx) => {
     const hittingBullets = bullets.filter((bullet) => {
-      return idx !== bullet.from && intersects({
+      const shootingPlayer = state.players[bullet.from];
+      return idx !== bullet.from && player.team !== shootingPlayer.team && intersects({
         x1: player.x,
         y1: player.y,
         x2: player.x + 20,
@@ -178,8 +190,7 @@ function maybeShootBullets(state) {
 
   const playersWithShotBullets = players.map((player, idx) => {
     const target = player.target;
-    if (!player.dead && target.type === 'enemy' && target.health > 0 && !player.bullet && inSameRoom(player, target, state.rooms)) {
-      console.log(player.name + " Shot")
+    if (player.ammo > 0 && !player.dead && target.type === 'fighting' && target.health > 0 && !player.bullet && inSameRoom(player, target, state.rooms)) {
       const targetY = target.y + 5;
       const targetX = target.x + 5;
       const bulletX = player.x + 5;
@@ -194,6 +205,7 @@ function maybeShootBullets(state) {
 
       return {
         ...player,
+        ammo: player.ammo - 1,
         bullet: {
           x: bulletX,
           y: bulletY,
@@ -241,6 +253,27 @@ function updateBulletsPositions(state) {
   };
 }
 
+function computeDistance(pointA, pointB) {
+  return Math.abs(pointA.x - pointB.x) + Math.abs(pointA.y - pointB.y);
+}
+
+function findClosestRoom(rooms, point) {
+  let distance = Infinity;
+  let closestRoom;
+  rooms.forEach((room) => {
+    const roomX = Math.floor((room.x2 + room.x1)/2);
+    const roomY = Math.floor((room.y2 + room.y1)/2);
+    const distanceToRoom = computeDistance(point, {x: roomX, y: roomY});
+      // Math.abs(point.x - roomX) + Math.abs(point.y - roomY);
+    if (distanceToRoom < distance) {
+      distance = distanceToRoom;
+      closestRoom = {x: roomX, y: roomY};
+    }
+  })
+
+  return closestRoom;
+}
+
 function maybeUpdateTargets(state) {
   const updatedPlayers = state.players.map((player, idx, players) => {
     if (player.health < 50 && state.health.length > 0) {
@@ -251,12 +284,64 @@ function maybeUpdateTargets(state) {
           type: 'health'
         },
       }
-    } else {
+    } else if (player.ammo === 0 && state.ammo.length) {
+      if (player.target.type === 'ammo' && !(player.x === player.target.x && player.y === player.target.y)) {
+        return player;
+      }
+      let closest = Infinity;
+      const closestAmmo = state.ammo.reduce((closeAmmo, currAmmo) => {
+        const distance = Math.abs(player.x - currAmmo.x) + Math.abs(player.y - currAmmo.y);
+        if (distance < closest) {
+          closest = distance;
+          closeAmmo = currAmmo;
+        }
+        return closeAmmo;
+      }, undefined);
       return {
         ...player,
         target: {
+          ...closestAmmo,
+          type: 'ammo'
+        }
+      }
+    } else if ((player.target.type === 'enemy' || player.target.type === 'fighting') && !state.players[player.enemy].dead && player.entirePath && player.entirePath.length < 500) {
+      const closestRoomToMe = findClosestRoom(state.rooms, player);
+      const closestRoomToEnemy = findClosestRoom(state.rooms, state.players[player.enemy]);
+
+      const distanceToMyRoom = computeDistance(player, closestRoomToMe);
+      const distanceToEnemyRoom = computeDistance(state.players[player.enemy], closestRoomToEnemy);
+
+      const roomToGoto = distanceToMyRoom < distanceToEnemyRoom ? (
+        closestRoomToMe
+      ) : closestRoomToEnemy;
+
+      return {
+        ...player,
+        target: {
+          type: 'fighting',
+          ...roomToGoto
+        }
+      }
+    } else {
+      const playerIdx = players[player.enemy].dead ? players.findIndex((onePlayer) => {
+        return onePlayer.team !== player.team && !onePlayer.dead;
+      }) : player.enemy;
+      if (playerIdx === -1) {
+        return {
+          ...player,
+          target: {
+            type: 'done',
+            x: 0,
+            y: 0,
+          }
+        }
+      }
+      return {
+        ...player,
+        enemy: playerIdx,
+        target: {
           type: 'enemy',
-          ...players[player.enemy]
+          ...players[playerIdx]
         },
       };
     }
