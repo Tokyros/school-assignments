@@ -20,6 +20,18 @@ export function drawRooms(ctx, rooms) {
   });
 }
 
+export function drawObjects(ctx, objs) {
+  objs.forEach((obj) => {
+    ctx.fillStyle = "orange";
+    ctx.fillRect(
+      obj.x1,
+      obj.y1,
+      obj.x2 - obj.x1,
+      obj.y2 - obj.y1
+    );
+  });
+}
+
 export function drawFloor(ctx, nodes) {
   nodes.forEach((node) => {
     ctx.fillStyle = "gray";
@@ -32,6 +44,15 @@ export function drawPlayers(ctx, players) {
     ctx.fillStyle = player.team === 1 ? "red" : "blue";
     if (player.dead) {
       ctx.fillStyle = 'black';
+    } else {
+      switch (player.target.type) {
+        case 'ammo':
+          ctx.fillStyle = 'brown';
+          break;
+        case 'health':
+          ctx.fillStyle = 'green';
+          break;
+      }
     }
     ctx.fillRect(player.x, player.y, dims.POINT_SIZE, dims.POINT_SIZE);
     ctx.fillStyle = "white";
@@ -75,11 +96,4 @@ export function drawDebug(ctx, state) {
     ctx.fillStyle = 'black';
     ctx.fillText(`${player.name}: ammo:${player.ammo}, ${player.target.type}, target: {x: ${player.target.x}, y: ${player.target.y}}`, 10, (idx + 1) * 15, 2000);
   })
-
-  state.rooms.forEach((room) => {
-    ctx.fillStyle = 'black';
-    ctx.fillText(`x1: ${room.x1}, y1: ${room.y1}`, room.x1, room.y1, 2000);
-  })
-
-  ctx.fillText(`230,246`, 230, 246);
 }
