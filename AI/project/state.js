@@ -162,7 +162,7 @@ function maybeShootBullets(state) {
     
     const playerHasActiveBullets = state.bullets.find((bullet) => bullet.from === idx);
 
-    if (!playerHasActiveBullets && player.cooldown === 0 && player.ammo > 0 && player.target.type === 'fighting' && inSameRoom(player, target, state.rooms)) {
+    if (!playerHasActiveBullets && player.cooldown === 0 && !player.dead && player.ammo > 0 && player.target.type === 'fighting' && inSameRoom(player, target, state.rooms)) {
       const targetY = target.y + 5;
       const targetX = target.x + 5;
       const bulletX = player.x + 5;
