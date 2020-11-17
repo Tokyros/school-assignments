@@ -120,21 +120,27 @@ function maybeTakeAmmo(state) {
 }
 
 function maybeHitPlayers(state) {
-  const bullets = state.players.reduce((acc, player, idx) => {
-    return player.bullet ? [...acc, { ...player.bullet, from: idx }] : acc;
-  }, []);
-  let hittingBulletsPlayers = new Set();
-  const playersWithUpdatedHealth = state.players.map((player, idx) => {
-    const hittingBullets = bullets.filter((bullet) => {
+  let hittingBulletsIdxs = new Set();
+  const playersWithUpdatedHealth = state.players.map((player) => {
+    const hittingBullets = state.bullets.map((bullet, bulletIdx) => {
       const shootingPlayer = state.players[bullet.from];
-      return idx !== bullet.from && player.team !== shootingPlayer.team && intersects({
+      const isFriendlyFire = player.team === shootingPlayer.team;
+      const bulletHitsPlayer = intersects({
         x1: player.x,
         y1: player.y,
         x2: player.x + 20,
         y2: player.y + 20,
       }, bullet);
-    }).map((bullet) => bullet.from);
-    hittingBulletsPlayers.add(...hittingBullets);
+
+      // console.log(`hits: ${bulletHitsPlayer}`);
+      
+      return !isFriendlyFire && bulletHitsPlayer ? bulletIdx : undefined;
+    }).filter(bulletIdx => {
+      console.log(`idx: ${bulletIdx}`)
+      return bulletIdx >= 0
+    });
+
+    hittingBulletsIdxs.add(...hittingBullets);
 
     return {
       ...player,
@@ -144,87 +150,84 @@ function maybeHitPlayers(state) {
 
   return {
     ...state,
-    players: playersWithUpdatedHealth.map((player, idx) => {
-      return hittingBulletsPlayers.has(idx) ? { ...player, bullet: undefined } : player;
-    }).map((player) => player.health > 0 ? player : {
-      ...player,
-      dead: true
-    })
+    bullets: state.bullets.filter((_, bulletIdx) => !hittingBulletsIdxs.has(bulletIdx)),
+    players: playersWithUpdatedHealth
   }
 }
 
 function maybeShootBullets(state) {
   const players = state.players;
-
-  const playersWithShotBullets = players.map((player, idx) => {
+  const newBulletsShot = players.reduce((newBullets, player, idx) => {
     const target = players[player.enemy];
+    
+    const playerHasActiveBullets = state.bullets.find((bullet) => bullet.from === idx);
 
-    if (player.cooldown === 0 && player.ammo > 0 && player.target.type === 'fighting' && !player.bullet && inSameRoom(player, target, state.rooms)) {
+    if (!playerHasActiveBullets && player.cooldown === 0 && player.ammo > 0 && player.target.type === 'fighting' && inSameRoom(player, target, state.rooms)) {
       const targetY = target.y + 5;
       const targetX = target.x + 5;
       const bulletX = player.x + 5;
       const bulletY = player.y + 5;
-      const slope = (targetY - bulletY) / (targetX - bulletX);
-      const direction = targetX !== bulletX
-        ? Math.atan(slope)
-        : (bulletY > targetY ? 1/2 * Math.PI : 3/2 * Math.PI);
-      const directionX = (bulletX > targetX ? -1 : 1) * Math.cos(direction);
-      const directionY = (bulletY > targetY ? 1 : -1) * Math.sin(direction);
-      const directionYForEqualX = (bulletY > targetY ? -1 : 1);
 
-      return {
-        ...player,
-        ammo: player.ammo - 1,
-        // 3 seconds
-        cooldown: 1 * 120,
-        bullet: {
-          x: bulletX,
-          y: bulletY,
-          direction: {
-            x: directionX,
-            y: bulletX === targetX ? directionYForEqualX : directionY
-          }
+      const dx = targetX - player.x;
+      const dy = targetY - player.y;
+      const angle = Math.atan2(dy, dx);
+
+      const directionX = Math.cos(angle);
+      const directionY =  Math.sin(angle);
+
+      const bullet = {
+        from: idx,
+        x: bulletX,
+        y: bulletY,
+        direction: {
+          x: directionX,
+          y: directionY
         }
-      }
+      };
+
+      return [...newBullets, bullet];
     }
 
-    return {
-      ...player,
-      cooldown: player.cooldown > 0 ? player.cooldown - 1 : 0,
-    };
-  });
+    return newBullets;
+  }, []);
+
+  const updatedPlayers = state.players.map((player, idx) => {
+    return newBulletsShot
+      .find((bullet) => bullet.from === idx)
+        ? {...player, ammo: player.ammo - 1, cooldown: 120}
+        : player;
+  })
 
   return {
     ...state,
-    players: playersWithShotBullets
+    bullets: [...state.bullets, ...newBulletsShot],
+    players: updatedPlayers
   }
 }
 
 function updateBulletsPositions(state) {
   return {
     ...state,
-    players: state.players.map((player, playerIdx, players) => {
-      const bullet = player.bullet;
-      if (bullet) {
-        const nextBulletPosition = {
-          x: bullet.x + bullet.direction.x,
-          y: bullet.y + bullet.direction.y,
-        };
+    bullets: state.bullets.map((bullet) => {
+      const nextBulletPosition = {
+        x: bullet.x + bullet.direction.x,
+        y: bullet.y + bullet.direction.y,
+      };
 
-        const bulletOutOfBounds = state.graph.grid[Math.floor(nextBulletPosition.x)][Math.floor(nextBulletPosition.y)].weight === WALL;// state.rooms.every((room) => !intersects(room, nextBulletPosition));
+      return {...bullet, ...nextBulletPosition};
 
-        return {
-          ...player,
-          bullet: bulletOutOfBounds ? undefined : {
-            ...bullet,
-            ...nextBulletPosition,
-          },
-        };
-      } else {
-        return player;
-      }
     }),
   };
+}
+
+function removeOutOfBoundsBullets(state) {
+  return {
+    ...state,
+    bullets: state.bullets.filter((bullet) => {
+      const bulletOutOfBounds = state.graph.grid[Math.floor(bullet.x)][Math.floor(bullet.y)].weight === WALL;
+      return !bulletOutOfBounds;
+    })
+  }
 }
 
 function computeDistance(pointA, pointB) {
@@ -232,19 +235,6 @@ function computeDistance(pointA, pointB) {
 }
 
 function findClosestRoom(rooms, point) {
-  // let distance = Infinity;
-  // let closestRoom;
-  // rooms.forEach((room) => {
-  //   const roomX = Math.floor((room.x2 + room.x1)/2);
-  //   const roomY = Math.floor((room.y2 + room.y1)/2);
-  //   const distanceToRoom = computeDistance(point, {x: roomX, y: roomY});
-  //     // Math.abs(point.x - roomX) + Math.abs(point.y - roomY);
-  //   if (distanceToRoom < distance) {
-  //     distance = distanceToRoom;
-  //     closestRoom = {x: roomX, y: roomY};
-  //   }
-  // })
-
   return findClosestPoint(rooms.map((room) => {
     return {
       x: Math.floor((room.x2 + room.x1)/2),
@@ -332,7 +322,7 @@ export function maybeUpdatePlayerTargets(state) {
         }
       }
     // Find room to fight once close enought
-    } else if (targetType === 'enemy' && isPlayerCloseToTarget) {
+    } else if (targetType === 'enemy' && isPlayerCloseToTarget && !targetInSameRoom) {
       const closestRoomToMe = findClosestRoom(state.rooms, player);
       const closestRoomToEnemy = findClosestRoom(state.rooms, state.players[player.enemy]);
 
@@ -341,12 +331,12 @@ export function maybeUpdatePlayerTargets(state) {
 
       const roomToGoto = distanceToMyRoom < distanceToEnemyRoom ? (
         closestRoomToMe
-      ) : closestRoomToEnemy;
+        ) : closestRoomToEnemy;
 
       return {
         ...player,
         target: {
-          type: 'fighting',
+          type: 'enemy',
           ...roomToGoto
         }
       }
@@ -360,7 +350,7 @@ export function maybeUpdatePlayerTargets(state) {
       return {
         ...player,
         target: {
-          type: 'enemy',
+          type: 'fighting',
           x: randomX,
           y: randomY
         }
@@ -383,14 +373,37 @@ export function maybeUpdatePlayerTargets(state) {
   }
 }
 
+function updatePlayersCooldowns(state){
+  return {
+    ...state,
+    players: state.players.map((player) => ({...player, cooldown: player.cooldown === 0 ? 0 : player.cooldown - 1}))
+  }
+}
+
+function maybeKillPlayers(state) {
+  return {
+    ...state,
+    players: state.players.map((player) => {
+      return {
+        ...player,
+        dead: player.health <= 0,
+        health: player.health <= 0 ? 0 : player.health
+      }
+    })
+  }
+}
+
 export function update(state) {
   const stateWithNewPositions = movePlayers(state);
   const stateWithUpdatedHealth = maybeTakeHealth(stateWithNewPositions);
   const stateWithUpdatedAmmo = maybeTakeAmmo(stateWithUpdatedHealth);
   const stateWithUpdatedPlayerHealth = maybeHitPlayers(stateWithUpdatedAmmo);
-  const stateWithUpdatedTargets = maybeUpdatePlayerTargets(stateWithUpdatedPlayerHealth);
+  const stateWithDeadPlayers = maybeKillPlayers(stateWithUpdatedPlayerHealth);
+  const stateWithUpdatedTargets = maybeUpdatePlayerTargets(stateWithDeadPlayers);
   const stateWithShotBullets = maybeShootBullets(stateWithUpdatedTargets);
   const stateWithUpdatedBullets = updateBulletsPositions(stateWithShotBullets);
+  const stateWithoutOutOfBoundsBullets = removeOutOfBoundsBullets(stateWithUpdatedBullets);
+  const stateWithUpdatedPlayersCooldowns = updatePlayersCooldowns(stateWithoutOutOfBoundsBullets)
 
-  return stateWithUpdatedBullets;
+  return stateWithUpdatedPlayersCooldowns;
 }

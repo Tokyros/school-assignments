@@ -61,16 +61,14 @@ export function drawPlayers(ctx, players) {
   });
 }
 
-export function drawBullets(ctx, players) {
-  players.forEach((player) => {
-    const bullet = player.bullet;
-    if (bullet) {
-      ctx.fillStyle = player.team === 1 ? "red" : "blue";
-      ctx.beginPath();
-      ctx.arc(bullet.x, bullet.y, 3, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-  });
+export function drawBullets(ctx, bullets, players) {
+  bullets.forEach((bullet) => {
+    const player = players.find((_, idx) => idx === bullet.from);
+    ctx.fillStyle = player.team === 1 ? "red" : "blue";
+    ctx.beginPath();
+    ctx.arc(bullet.x, bullet.y, 3, 0, 2 * Math.PI);
+    ctx.fill();
+  })
 }
 
 export function drawHealth(ctx, healths) {
@@ -87,13 +85,33 @@ export function drawAmmo(ctx, ammos) {
   })
 }
 
+function canvas_arrow(context, fromx, fromy, tox, toy) {
+  var headlen = 10; // length of head in pixels
+  var dx = tox - fromx;
+  var dy = toy - fromy;
+  var angle = Math.atan2(dy, dx);
+  context.moveTo(fromx, fromy);
+  context.lineTo(tox, toy);
+  context.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+  context.moveTo(tox, toy);
+  context.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+  context.stroke();
+}
+
 export function drawDebug(ctx, state) {
   ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, 300, 70);
+  ctx.fillRect(0, 0, 400, 70);
   state.players.forEach((player, idx) => {
     const room = state.rooms.findIndex((room) => intersects(room, player));
     
     ctx.fillStyle = 'black';
-    ctx.fillText(`${player.name}: ammo:${player.ammo}, ${player.target.type}, target: {x: ${player.target.x}, y: ${player.target.y}}`, 10, (idx + 1) * 15, 2000);
+    ctx.fillText(`${player.name}: ammo:${player.ammo}, ${player.target.type}, target: {x: ${player.target.x}, y: ${player.target.y}}, dead?: ${player.dead}`, 10, (idx + 1) * 15, 2000);
   })
+
+  // ctx.fillStyle = 'black';
+
+  // ctx.fillRect(state.rooms[0].x1 + 10, state.rooms[0].y1 + 10, 10, 10);
+  // ctx.fillRect(state.rooms[0].x1 + 10, state.rooms[0].y1 + 30, 10, 10);
+  // ctx.strokeStyle = 'red';
+  // canvas_arrow(ctx, state.rooms[0].x1 + 10, state.rooms[0].y1 + 30, state.rooms[0].x1 + 10, state.rooms[0].y1 + 10)
 }

@@ -8,13 +8,15 @@ const ctx = initCanvas("cvs", dims.canvasWidth, dims.canvasHeight);
 
 const player1 = {
   team: 1,
-  x: rooms[1].x1 + 20,
+  x: rooms[1].x1 + 0,
   y: rooms[1].y1 + 40,
   name: "Player 1",
   health: 100,
-  enemy: 2,
+  // enemy: 2,
+  enemy: 1,
   ammo: 9,
   entirePath: [],
+  cooldown: 0,
 };
 
 const player2 = {
@@ -27,6 +29,7 @@ const player2 = {
   target: 3,
   ammo: 9,
   entirePath: [],
+  cooldown: 0,
 };
 
 const player3 = {
@@ -38,6 +41,7 @@ const player3 = {
   name: "Player 3",
   ammo: 9,
   entirePath: [],
+  cooldown: 0,
 }
 
 const player4 = {
@@ -49,6 +53,7 @@ const player4 = {
   name: "Player 4",
   ammo: 9,
   entirePath: [],
+  cooldown: 0,
 }
 
 player1.target = player3;
@@ -109,7 +114,7 @@ const objects = rooms.reduce((objs, room) => {
     y2: randomPoint2.y + objHeight,
   }
 
-  return [...objs, obj1, obj2]
+  return []; //[...objs, obj1, obj2]
 }, []);
 const graph = generateGraph(dims.canvasWidth, dims.canvasHeight, rooms, connections, objects);
 console.timeEnd('generateGraph');
@@ -129,7 +134,9 @@ let state = {
   graph,
   rooms,
   connections,
-  players: [player1, player2, player3, player4],
+  // players: [player1, player2, player3, player4],
+  players: [player1, player3],
+  bullets: [],
   health: new Array(0).fill(0).map(() => ({
     ...randomPoint(),
     health: 20
@@ -141,10 +148,11 @@ let state = {
   objects
 };
 
-player1.target = {type: 'enemy', ...state.players[2]}
+// player1.target = {type: 'enemy', ...state.players[2]}
+player1.target = {type: 'enemy', ...state.players[1]}
 player3.target = {type: 'enemy', ...state.players[0]}
-player2.target = {type: 'enemy', ...state.players[3]}
-player4.target = {type: 'enemy', ...state.players[1]}
+// player2.target = {type: 'enemy', ...state.players[3]}
+// player4.target = {type: 'enemy', ...state.players[1]}
 
 function main() {
 	setInterval(() => {
@@ -155,19 +163,22 @@ function main() {
         ammo: 5
       })))
     }
-
+    
     if ((player1.dead && player2.dead) || (player3.dead && player4.dead)) {
       return;
     }
-
-    drawRooms(ctx, state.rooms);
-		drawFloor(ctx, state.connections);
-    drawObjects(ctx, state.objects);
-    drawPlayers(ctx, state.players);
-    drawBullets(ctx, state.players);
-    drawHealth(ctx, state.health);
-    drawAmmo(ctx, state.ammo);
-    drawDebug(ctx, state);
+    
+    requestAnimationFrame(() => {
+      drawRooms(ctx, state.rooms);
+      drawFloor(ctx, state.connections);
+      drawObjects(ctx, state.objects);
+      drawPlayers(ctx, state.players);
+      drawBullets(ctx, state.bullets, state.players);
+      drawHealth(ctx, state.health);
+      drawAmmo(ctx, state.ammo);
+      drawDebug(ctx, state);
+    })
+    
 	}, 1000 / 120);
 }
 
