@@ -1,5 +1,5 @@
-import { dims } from "./constants.js";
-import { rooms, intersects, connectRooms } from "./rooms.js";
+import { dims, WALL } from "./constants.js";
+import { rooms, intersects, objects } from "./rooms.js";
 import { update } from "./state.js";
 import { drawAmmo, initCanvas, drawRooms, drawFloor, drawPlayers, drawBullets, drawHealth, drawDebug, drawObjects } from './canvas.js';
 import { generateGraph } from './graph.js';
@@ -8,8 +8,8 @@ const ctx = initCanvas("cvs", dims.canvasWidth, dims.canvasHeight);
 
 const player1 = {
   team: 1,
-  x: rooms[1].x1 + 0,
-  y: rooms[1].y1 + 40,
+  x: rooms[2].x1 + 0,
+  y: rooms[2].y1 + 40,
   name: "Player 1",
   health: 100,
   // enemy: 2,
@@ -34,8 +34,8 @@ const player2 = {
 
 const player3 = {
   team: 2,
-	x: rooms[5].x1 + 70,
-  y: rooms[5].y1 + 70,
+	x: rooms[3].x1 + 70,
+  y: rooms[3].y1 + 70,
   health: 100,
   enemy: 0,
   name: "Player 3",
@@ -82,48 +82,22 @@ console.time('connectRooms');
 const connections = window.connections; // connectRooms(freeForAllGraph, rooms);
 console.timeEnd('connectRooms');
 
-function randomInRange(from, to) {
-  return Math.floor((Math.random() * (to - from)) + from);
-}
-
-function randomInRoom(room) {
-  return {
-    x: randomInRange(room.x1, room.x2),
-    y: randomInRange(room.y1, room.y2)
-  }
-}
-
 console.time('generateGraph');
-const objects = rooms.reduce((objs, room) => {
-  const objWidth = 20;
-  const objHeight = 50;
-  const randomPoint1 = randomInRoom(room);
-  const randomPoint2 = randomInRoom(room);
-  
-  const obj1 = {
-    x1: randomPoint1.x , 
-    x2: randomPoint1.x + objWidth,
-    y1: randomPoint1.y, 
-    y2: randomPoint1.y + objHeight,
-  }
-  
-  const obj2 = {
-    x1: randomPoint2.x, 
-    x2: randomPoint2.x + objWidth,
-    y1: randomPoint2.y, 
-    y2: randomPoint2.y + objHeight,
-  }
 
-  return []; //[...objs, obj1, obj2]
-}, []);
 const graph = generateGraph(dims.canvasWidth, dims.canvasHeight, rooms, connections, objects);
 console.timeEnd('generateGraph');
 
 const randomPoint = () => {
   const randomRoomIdx = Math.floor(Math.random() * rooms.length);
   const room = rooms[randomRoomIdx];
-  const randomX = Math.floor(Math.random() * (room.x2 - room.x1) + room.x1);
-  const randomY = Math.floor(Math.random() * (room.y2 - room.y1) + room.y1);
+  let randomX;
+  let randomY;
+  do {
+    console.log('trying');
+    randomX = Math.floor(Math.random() * (room.x2 - room.x1) + room.x1);
+    randomY = Math.floor(Math.random() * (room.y2 - room.y1) + room.y1);
+  } while (graph.grid[randomX][randomY].weight === WALL)
+  
   return {
     x: randomX,
     y: randomY
@@ -137,7 +111,7 @@ let state = {
   // players: [player1, player2, player3, player4],
   players: [player1, player3],
   bullets: [],
-  health: new Array(0).fill(0).map(() => ({
+  health: new Array(5).fill(0).map(() => ({
     ...randomPoint(),
     health: 20
   })),
@@ -155,8 +129,9 @@ player3.target = {type: 'enemy', ...state.players[0]}
 // player4.target = {type: 'enemy', ...state.players[1]}
 
 function main() {
-	setInterval(() => {
+	const timer = setInterval(() => {
     state = update(state);
+
     if (state.ammo.length < 10) {
       state.ammo.push(...new Array(10).fill(0).map(() => ({
         ...randomPoint(),
@@ -164,7 +139,8 @@ function main() {
       })))
     }
     
-    if ((player1.dead && player2.dead) || (player3.dead && player4.dead)) {
+    if ((state.players[0].dead) || (state.players[1].dead)) {
+      clearInterval(timer);
       return;
     }
     
@@ -178,7 +154,6 @@ function main() {
       drawAmmo(ctx, state.ammo);
       drawDebug(ctx, state);
     })
-    
 	}, 1000 / 120);
 }
 

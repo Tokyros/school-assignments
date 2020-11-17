@@ -122,6 +122,7 @@ function maybeTakeAmmo(state) {
 function maybeHitPlayers(state) {
   let hittingBulletsIdxs = new Set();
   const playersWithUpdatedHealth = state.players.map((player) => {
+    let damage = 0;
     const hittingBullets = state.bullets.map((bullet, bulletIdx) => {
       const shootingPlayer = state.players[bullet.from];
       const isFriendlyFire = player.team === shootingPlayer.team;
@@ -132,11 +133,11 @@ function maybeHitPlayers(state) {
         y2: player.y + 20,
       }, bullet);
 
-      // console.log(`hits: ${bulletHitsPlayer}`);
-      
-      return !isFriendlyFire && bulletHitsPlayer ? bulletIdx : undefined;
+      if (!isFriendlyFire && bulletHitsPlayer && bullet.type !== 'grenade') {
+        damage += bullet.damage;
+        return bulletIdx;
+      }
     }).filter(bulletIdx => {
-      console.log(`idx: ${bulletIdx}`)
       return bulletIdx >= 0
     });
 
@@ -144,7 +145,7 @@ function maybeHitPlayers(state) {
 
     return {
       ...player,
-      health: player.health - hittingBullets.length * 10,
+      health: player.health - Math.round(damage),
     }
   })
 
@@ -155,37 +156,74 @@ function maybeHitPlayers(state) {
   }
 }
 
+function createBullet (from, to, playerIdx) {
+  const targetY = to.y + 5;
+  const targetX = to.x + 5;
+  const bulletX = from.x + 5;
+  const bulletY = from.y + 5;
+
+  const dx = targetX - bulletX;
+  const dy = targetY - bulletY;
+  const angle = Math.atan2(dy, dx);
+
+  const directionX = Math.cos(angle);
+  const directionY =  Math.sin(angle);
+
+  return {
+    from: playerIdx,
+    type: 'bullet',
+    x: bulletX,
+    y: bulletY,
+    damage: 10,
+    direction: {
+      x: directionX,
+      y: directionY
+    }
+  }
+}
+
+function createGrenade (from, to, playerIdx) {
+  const targetY = to.y + 5;
+  const targetX = to.x + 5;
+  const bulletX = from.x + 5;
+  const bulletY = from.y + 5;
+
+  const dx = targetX - bulletX;
+  const dy = targetY - bulletY;
+  const angle = Math.atan2(dy, dx);
+
+  const directionX = Math.cos(angle);
+  const directionY =  Math.sin(angle);
+
+  return {
+    from: playerIdx,
+    type: 'grenade',
+    x: bulletX,
+    y: bulletY,
+    // grenade counter
+    damage: 3,
+    direction: {
+      x: directionX,
+      y: directionY
+    }
+  }
+}
+
 function maybeShootBullets(state) {
   const players = state.players;
   const newBulletsShot = players.reduce((newBullets, player, idx) => {
-    const target = players[player.enemy];
-    
     const playerHasActiveBullets = state.bullets.find((bullet) => bullet.from === idx);
+    const cooldownOver = player.cooldown === 0;
+    const isFighting = player.target.type === 'fighting';
+    const target = players[player.enemy];
+    const distanceToTarget = computeDistance(player, target);
 
-    if (!playerHasActiveBullets && player.cooldown === 0 && !player.dead && player.ammo > 0 && player.target.type === 'fighting' && inSameRoom(player, target, state.rooms)) {
-      const targetY = target.y + 5;
-      const targetX = target.x + 5;
-      const bulletX = player.x + 5;
-      const bulletY = player.y + 5;
-
-      const dx = targetX - player.x;
-      const dy = targetY - player.y;
-      const angle = Math.atan2(dy, dx);
-
-      const directionX = Math.cos(angle);
-      const directionY =  Math.sin(angle);
-
-      const bullet = {
-        from: idx,
-        x: bulletX,
-        y: bulletY,
-        direction: {
-          x: directionX,
-          y: directionY
-        }
-      };
-
-      return [...newBullets, bullet];
+    if (!playerHasActiveBullets && cooldownOver && !player.dead && player.ammo > 0 && isFighting && inSameRoom(player, target, state.rooms)) {
+      if (distanceToTarget < 100) {
+        return [...newBullets, createGrenade(player, target, idx)];
+      } else {
+        return [...newBullets, createBullet(player, target, idx)];
+      }
     }
 
     return newBullets;
@@ -214,19 +252,37 @@ function updateBulletsPositions(state) {
         y: bullet.y + bullet.direction.y,
       };
 
-      return {...bullet, ...nextBulletPosition};
-
+      return {...bullet, ...nextBulletPosition, damage: bullet.damage - 0.05};
     }),
   };
 }
 
 function removeOutOfBoundsBullets(state) {
+  const grenades = state.bullets.filter((bullet) => bullet.type === 'grenade');
+
+  const boobGrenades = grenades.filter((grenade) => {
+    const bulletOutOfBounds = state.graph.grid[Math.floor(grenade.x)][Math.floor(grenade.y)].weight === WALL;
+    return bulletOutOfBounds;
+  })
+
+  const defractedGrenades = boobGrenades.map((grenade) => {
+    return {
+      ...grenade,
+      x: grenade.x + grenade.direction.x * -1,
+      y: grenade.y + grenade.direction.y * -1,
+      direction: {
+        x: grenade.direction.x * -1,
+        y: grenade.direction.y * -1,
+      }
+    }
+  })
+
   return {
     ...state,
-    bullets: state.bullets.filter((bullet) => {
+    bullets: [...defractedGrenades, ...state.bullets.filter((bullet) => {
       const bulletOutOfBounds = state.graph.grid[Math.floor(bullet.x)][Math.floor(bullet.y)].weight === WALL;
       return !bulletOutOfBounds;
-    })
+    })]
   }
 }
 
@@ -344,8 +400,13 @@ export function maybeUpdatePlayerTargets(state) {
       
       const currentRoom = getCurrentRoom(player, state.rooms);
 
-      const randomX = randomInRange(currentRoom.x1, currentRoom.x2);
-      const randomY = randomInRange(currentRoom.y1, currentRoom.y2);
+      let randomX;
+      let randomY;
+      do {
+        randomX = randomInRange(currentRoom.x1, currentRoom.x2);
+        randomY = randomInRange(currentRoom.y1, currentRoom.y2);
+      } while (state.graph.grid[randomX][randomY] === WALL)
+      
 
       return {
         ...player,
@@ -356,7 +417,6 @@ export function maybeUpdatePlayerTargets(state) {
         }
       };
     } else {
-      (idx, 'WAT');
       return {
         ...player,
         target: {
@@ -393,6 +453,29 @@ function maybeKillPlayers(state) {
   }
 }
 
+function explodeGrenades(state) {
+  const grenadesToExplode = state.bullets.filter((bullet) => bullet.type === 'grenade' && bullet.damage <= 0);
+  const regularBullets = state.bullets.filter((bullet) => bullet.type !== 'grenade' || bullet.damage > 0);
+  const bulletsFromGrenades = grenadesToExplode.reduce((bullets, grenade) => {
+    let newBullets = [];
+    for (let angle = 0; angle < 360; angle += 360/5) {
+      const theta = angle * (Math.PI / 180)
+      const dx = Math.cos(theta) * 500;
+      const dy = Math.sin(theta) * 500;
+      const target = {x: grenade.x + dx, y: grenade.y + dy};
+      newBullets.push(createBullet(grenade, target, grenade.from));
+    }
+
+    return [...bullets, ...newBullets];
+  }, []);
+
+  return {
+    ...state,
+    bullets: [...regularBullets, ...bulletsFromGrenades]
+  }
+}
+
+
 export function update(state) {
   const stateWithNewPositions = movePlayers(state);
   const stateWithUpdatedHealth = maybeTakeHealth(stateWithNewPositions);
@@ -402,7 +485,8 @@ export function update(state) {
   const stateWithUpdatedTargets = maybeUpdatePlayerTargets(stateWithDeadPlayers);
   const stateWithShotBullets = maybeShootBullets(stateWithUpdatedTargets);
   const stateWithUpdatedBullets = updateBulletsPositions(stateWithShotBullets);
-  const stateWithoutOutOfBoundsBullets = removeOutOfBoundsBullets(stateWithUpdatedBullets);
+  const stateWithExplodedGrenades = explodeGrenades(stateWithUpdatedBullets)
+  const stateWithoutOutOfBoundsBullets = removeOutOfBoundsBullets(stateWithExplodedGrenades);
   const stateWithUpdatedPlayersCooldowns = updatePlayersCooldowns(stateWithoutOutOfBoundsBullets)
 
   return stateWithUpdatedPlayersCooldowns;

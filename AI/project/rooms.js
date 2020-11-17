@@ -12,6 +12,18 @@ export const rooms = [
   { x1: 900, y1: 3, x2: 1085, y2: 216 },
 ];
 
+const room = rooms[0];
+
+function getObjectsFromRoom(room) {
+  return [
+    {x1: room.x1 + 20, y1: (room.y1 + room.y2) / 2 - ((room.y2 - room.y1) / 4), x2: room.x1 + 40, y2: (room.y1 + room.y2) / 2 + ((room.y2 - room.y1) / 4)},
+    {x1: room.x2 - 40, y1: (room.y1 + room.y2) / 2 - ((room.y2 - room.y1) / 4), x2: room.x2 - 20, y2: (room.y1 + room.y2) / 2 + ((room.y2 - room.y1) / 4)},
+  ];
+}
+export const objects = rooms.reduce((objs, room) => {
+  return [...objs, ...getObjectsFromRoom(room)];
+}, []);
+
 // export const rooms = generateRandomRooms(10, 10, 10, 10, 10);
 
 function roomsIntersect(roomA, roomB) {
