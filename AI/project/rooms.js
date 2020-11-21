@@ -3,20 +3,20 @@ import { dims } from './constants.js';
 
 
 export const rooms = [
-  { x1: 1, y1: 532, x2: 169, y2: 688 },
-  { x1: 137, y1: 405, x2: 257, y2: 510 },
-  { x1: 202, y1: 80, x2: 431, y2: 216 },
-  { x1: 513, y1: 257, x2: 663, y2: 470 },
-  { x1: 538, y1: 513, x2: 768, y2: 759 },
+  { x1: 1, y1: 532, x2: 250, y2: 750 },
+  { x1: 20, y1: 300, x2: 257, y2: 510 },
+  { x1: 202, y1: 80, x2: 431, y2: 250 },
+  { x1: 500, y1: 200, x2: 720, y2: 470 },
+  { x1: 510, y1: 500, x2: 768, y2: 759 },
   { x1: 896, y1: 440, x2: 1052, y2: 646 },
-  { x1: 900, y1: 3, x2: 1085, y2: 216 },
+  { x1: 850, y1: 3, x2: 1085, y2: 300 },
 ];
 
 const room = rooms[0];
 
 function getObjectsFromRoom(room) {
   return [
-    {x1: room.x1 + 20, y1: (room.y1 + room.y2) / 2 - ((room.y2 - room.y1) / 4), x2: room.x1 + 40, y2: (room.y1 + room.y2) / 2 + ((room.y2 - room.y1) / 4)},
+    {x1: room.x1 + 30, y1: (room.y1 + room.y2) / 2 - ((room.y2 - room.y1) / 4), x2: room.x1 + 50, y2: (room.y1 + room.y2) / 2 + ((room.y2 - room.y1) / 4)},
     {x1: room.x2 - 40, y1: (room.y1 + room.y2) / 2 - ((room.y2 - room.y1) / 4), x2: room.x2 - 20, y2: (room.y1 + room.y2) / 2 + ((room.y2 - room.y1) / 4)},
   ];
 }
