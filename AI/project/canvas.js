@@ -1,5 +1,5 @@
-import { dims } from "./constants.js";
-import { intersects } from "./rooms.js";
+import { dimensions } from "./constants.js";
+import { isPointInRoom } from "./geometry.js";
 
 export function initCanvas(id, width, height) {
   const cvs = document.getElementById(id);
@@ -14,8 +14,8 @@ export function drawRooms(ctx, rooms) {
     ctx.fillRect(
       room.x1,
       room.y1,
-      room.x2 - room.x1 + dims.POINT_SIZE,
-      room.y2 - room.y1 + dims.POINT_SIZE
+      room.x2 - room.x1 + dimensions.POINT_SIZE,
+      room.y2 - room.y1 + dimensions.POINT_SIZE
     );
   });
 }
@@ -35,7 +35,7 @@ export function drawObjects(ctx, objs) {
 export function drawFloor(ctx, nodes) {
   nodes.forEach((node) => {
     ctx.fillStyle = "gray";
-    ctx.fillRect(node.x, node.y, dims.POINT_SIZE, dims.POINT_SIZE);
+    ctx.fillRect(node.x, node.y, dimensions.POINT_SIZE, dimensions.POINT_SIZE);
   });
 }
 
@@ -54,10 +54,10 @@ export function drawPlayers(ctx, players) {
           break;
       }
     }
-    ctx.fillRect(player.x, player.y, dims.POINT_SIZE, dims.POINT_SIZE);
+    ctx.fillRect(player.x, player.y, dimensions.POINT_SIZE, dimensions.POINT_SIZE);
     ctx.fillStyle = "white";
     ctx.fillText(`${idx + 1}`, player.x + 5, player.y + 10);
-    ctx.fillText(`${player.health}`, player.x + 5, player.y + 15);
+    ctx.fillText(`${player.health}`, player.x + 5, player.y + 20);
   });
 }
 
@@ -77,14 +77,14 @@ export function drawBullets(ctx, bullets, players) {
 export function drawHealth(ctx, healths) {
   healths.forEach((health) => {
     ctx.fillStyle = "green";
-    ctx.fillRect(health.x, health.y, dims.POINT_SIZE, dims.POINT_SIZE);
+    ctx.fillRect(health.x, health.y, dimensions.POINT_SIZE, dimensions.POINT_SIZE);
   })
 }
 
 export function drawAmmo(ctx, ammos) {
   ammos.forEach((ammo) => {
     ctx.fillStyle = "brown";
-    ctx.fillRect(ammo.x, ammo.y, dims.POINT_SIZE, dims.POINT_SIZE);
+    ctx.fillRect(ammo.x, ammo.y, dimensions.POINT_SIZE, dimensions.POINT_SIZE);
   })
 }
 
@@ -92,9 +92,9 @@ export function drawDebug(ctx, state) {
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, 400, 70);
   state.players.forEach((player, idx) => {
-    const room = state.rooms.findIndex((room) => intersects(room, player));
+    const targetDescription = ['enemy', 'fighting'].includes(player.target.type) ? state.players[player.enemy].name : player.target.type;
     
     ctx.fillStyle = 'black';
-    ctx.fillText(`${player.name}: health: ${player.health}, ammo:${player.ammo}, target: ${player.target.type}`, 10, (idx + 1) * 15, 2000);
+    ctx.fillText(`${player.name}: health: ${player.health}, ammo:${player.ammo}, target: ${targetDescription}`, 10, (idx + 1) * 15, 2000);
   })
 }

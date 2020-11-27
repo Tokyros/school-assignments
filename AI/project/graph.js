@@ -1,10 +1,9 @@
 import { FLOOR, WALL } from "./constants.js";
 import { Graph } from "./astar.js";
-import { intersects } from "./rooms.js";
 
-export function generateGraph(width, height, rooms, connections, objs) {
+export function generateGraph(width, height, rooms, passages, blockingObjects) {
   const twoDArr = new Array(width).fill(WALL).map(() => new Array(height).fill(WALL));
-  connections.forEach((point) => {
+  passages.forEach((point) => {
     twoDArr[point.x][point.y] = FLOOR;
   });
 
@@ -16,7 +15,7 @@ export function generateGraph(width, height, rooms, connections, objs) {
     }    
   });
 
-  objs.forEach((obj) => {
+  blockingObjects.forEach((obj) => {
     for (let x = obj.x1; x <= obj.x2; x++) {
       for (let y = obj.y1; y <= obj.y2; y++) {
         twoDArr[Math.floor(x)][Math.floor(y)] = WALL;
