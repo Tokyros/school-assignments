@@ -20,11 +20,13 @@ int numToBinaryLength(int num) {
 
 char* numToBinaryString(int num) {
 	int stringLength = numToBinaryLength(num);
-	char* binaryString = (char*) malloc(sizeof(char) * stringLength + 1);
+	char* binaryString = (char*) malloc(sizeof(char) * (stringLength + 1));
 	for (int c = 0; c < stringLength; c++) {
 		binaryString[stringLength - c - 1] = num % 2 + '0';
 		num /= 2;
 	}
+
+	binaryString[stringLength] = '\0';
 
 	return binaryString;
 }
@@ -34,25 +36,38 @@ int isValidText(char *text, char *knownWords) {
 	char *word;
 	
 	word = strtok(knownWords, separator);
+	int matchCount = 0;
 	
 	while( word != NULL ) {
 		if (strstr(text, word) != NULL) {
-			return 1;
+			matchCount++;
+			// return 1;
 		}
 		word = strtok(NULL, separator);
 	}
-	return 0;
+
+	printf("%s -> %d\n", text, matchCount);
+
+	return matchCount;
 }
 
-void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen) {
-	omp_set_num_threads(4);
+void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen, int* bestMatch) {
+	omp_set_num_threads(16);
+
 	#pragma omp parallel for
 	for (int i = fromKey; i < toKey; i++) {
 		char* binaryString = numToBinaryString(i);
-		printf("%s\n", binaryString);
+
 		binaryStringToBinary(binaryString, keyLen);
 		char* deciphered = cipherString(binaryString, keyLen, data, data_length);
-		printf("%s\n", deciphered);
+		deciphered = (char* )realloc(deciphered, sizeof(char) * data_length + 1);
+		deciphered[data_length] = '\0';
+		// printf("%d -> %s -> %d\n", i, deciphered, isValidText(deciphered, words));
+		int match = isValidText(deciphered, words);
+		if (match > *bestMatch) {
+			*key = i;
+			*bestMatch = match;
+		}
 	}
 }
 
@@ -69,13 +84,14 @@ int main(int argc, char *argv[])
 	int fromKey, toKey, keyOptions;
 	char *data, *knownWordsString;
 	MPI_Status mpiStatus;
-	int res;
+	int res, bestMatch;
 
 	if (currentProcess == 1)
 	{
 		MPI_Recv(&inputSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
 		MPI_Recv(&knownWordsLength, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
 		MPI_Recv(&keyOptions, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
+		MPI_Recv(&keyLength, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
 		
 		data = (char *) malloc(sizeof(char) * (inputSize));
 		knownWordsString = (char *) malloc(sizeof(char) * (knownWordsLength));
@@ -111,45 +127,15 @@ int main(int argc, char *argv[])
 
 		MPI_Send(&inputSize, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 		MPI_Send(&knownWordsLength, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);					 
-		MPI_Send(&keyOptions, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);	
+		MPI_Send(&keyOptions, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+		MPI_Send(&keyLength, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
 
 		MPI_Send(data, inputSize, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
 		MPI_Send(knownWordsString, knownWordsLength, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
 	}
 
-	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength);
-
-//
-//	// Compute 1/4 of the data via CUDA
-//	int cudaResult = computeOnGPU(data + itemsPerTask, finalHistogram, itemsPerTask, INPUT_MAX_VALUE);
-//
-//	// Check for errors in CUDA process
-//	if (cudaResult != 0)
-//		MPI_Abort(MPI_COMM_WORLD, __LINE__);
-//
-//	// Slave process
-//	if (currentProcess)
-//	{
-//		MPI_Send(&finalHistogram[0], INPUT_MAX_VALUE, MPI_INT, 0, 0, MPI_COMM_WORLD);
-//	}
-//	// Master process
-//	else
-//	{
-//		int slaveProcessHistogram[INPUT_MAX_VALUE] = {0};
-//		MPI_Recv(&slaveProcessHistogram[0], INPUT_MAX_VALUE, MPI_INT, 1, 0, MPI_COMM_WORLD, &mpiStatus);
-//
-//		// Combine the two halves from master and slave process
-//		for (int i = 0; i < INPUT_MAX_VALUE; i++)
-//		{
-//			finalHistogram[i] += slaveProcessHistogram[i];
-//		}
-//
-//		// Print histogram to output
-//		for (int i = 0; i < INPUT_MAX_VALUE; i++)
-//		{
-//			printf("%d: %d\n", i, finalHistogram[i]);
-//		}
-//	}
+	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength, &bestMatch);
+	printf("Result is - %d - %d\n", res, bestMatch);
 
 	MPI_Finalize();
 	return 0;
