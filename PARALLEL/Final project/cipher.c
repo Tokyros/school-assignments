@@ -88,53 +88,53 @@ void printHelp(char *argv)
     fprintf(stdout, "    -b, --binary            read key as binary\n");
 }
 
-int main(int argc, char *argv[])
-{
-   FILE *input, *output;
-   int i;
-   if (argc < 3 || argc > 8)
-   {
-       printHelp(argv[0]);
-       return 0;
-   }
-   input = stdin;
-   output = stdout;
-   for (i = 3; i < argc; i++)
-   {
-       if (strcmp(argv[i], "-input") == 0 || strcmp(argv[i], "-i") == 0)
-       {
-           i++;
-           input = fopen(argv[i], "r");
-           if (!input)
-           {
-               fprintf(stderr, "Error opening file\n");
-               return 0;
-           }
-           continue;
-       }
-       if (strcmp(argv[i], "-output") == 0 || strcmp(argv[i], "-o") == 0)
-       {
-           i++;
-           output = fopen(argv[i], "w");
-           if (!output)
-           {
-               fprintf(stderr, "Error opening file\n");
-               return 0;
-           }
-           continue;
-       }
-       if (strcmp(argv[i], "-binary") == 0 || strcmp(argv[i], "-b") == 0)
-       {
-           binaryStringToBinary(argv[1],atoi(argv[2]));
-           continue;
-       }
-       printHelp(argv[0]);
-       return 0;
-   }
+// int main(int argc, char *argv[])
+// {
+//    FILE *input, *output;
+//    int i;
+//    if (argc < 3 || argc > 8)
+//    {
+//        printHelp(argv[0]);
+//        return 0;
+//    }
+//    input = stdin;
+//    output = stdout;
+//    for (i = 3; i < argc; i++)
+//    {
+//        if (strcmp(argv[i], "-input") == 0 || strcmp(argv[i], "-i") == 0)
+//        {
+//            i++;
+//            input = fopen(argv[i], "r");
+//            if (!input)
+//            {
+//                fprintf(stderr, "Error opening file\n");
+//                return 0;
+//            }
+//            continue;
+//        }
+//        if (strcmp(argv[i], "-output") == 0 || strcmp(argv[i], "-o") == 0)
+//        {
+//            i++;
+//            output = fopen(argv[i], "w");
+//            if (!output)
+//            {
+//                fprintf(stderr, "Error opening file\n");
+//                return 0;
+//            }
+//            continue;
+//        }
+//        if (strcmp(argv[i], "-binary") == 0 || strcmp(argv[i], "-b") == 0)
+//        {
+//            binaryStringToBinary(argv[1],atoi(argv[2]));
+//            continue;
+//        }
+//        printHelp(argv[0]);
+//        return 0;
+//    }
 
-   cipher(argv[1], atoi(argv[2]), input, output);
+//    cipher(argv[1], atoi(argv[2]), input, output);
 
-   fclose(input);
-   fclose(output);
-   return 0;
-}
+//    fclose(input);
+//    fclose(output);
+//    return 0;
+// }

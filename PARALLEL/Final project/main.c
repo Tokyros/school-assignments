@@ -45,48 +45,51 @@ int isValidText(char *text, char *knownWords) {
 }
 
 void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen) {
-	int i, j;
-	
+	omp_set_num_threads(4);
 	#pragma omp parallel for
-	for (i = fromKey; i < toKey && key < 0; i++) {
+	for (int i = fromKey; i < toKey; i++) {
 		char* binaryString = numToBinaryString(i);
+		printf("%s\n", binaryString);
 		binaryStringToBinary(binaryString, keyLen);
-		char* deciphered = cipherString(binaryString, keyLen, data, data_length)
+		char* deciphered = cipherString(binaryString, keyLen, data, data_length);
+		printf("%s\n", deciphered);
 	}
 }
 
 int main(int argc, char *argv[])
 {
-	int inputSize, knownWordsLength;
-	int currentProcess, processCount, keyLength;
-	double keyOptions;
-	int fromKey, toKey;
-	char *data, *knownWordsString;
-	MPI_Status mpiStatus;
+	int currentProcess, processCount;
 
-	// MPI initialization
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &processCount);
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &currentProcess);
 
-	// Slave process
+	int inputSize, knownWordsLength, keyLength;
+	int fromKey, toKey, keyOptions;
+	char *data, *knownWordsString;
+	MPI_Status mpiStatus;
+	int res;
+
 	if (currentProcess == 1)
 	{
-		// Initialise data on slave process side
 		MPI_Recv(&inputSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
-		MPI_Recv(&keyOptions, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &mpiStatus);
-		data = (char *)malloc(sizeof(char) * (inputSize + 1));
+		MPI_Recv(&knownWordsLength, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
+		MPI_Recv(&keyOptions, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
+		
+		data = (char *) malloc(sizeof(char) * (inputSize));
+		knownWordsString = (char *) malloc(sizeof(char) * (knownWordsLength));
+		
 		fromKey = (int) keyOptions / 2 + 1;
-		toKey = keyOptions;
-		MPI_Recv(data, inputSize + 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &mpiStatus);
-		printf("Received data:\n%s\n", data);
+		toKey = (int) keyOptions;
+
+		MPI_Recv(data, inputSize, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &mpiStatus);
+		MPI_Recv(knownWordsString, knownWordsLength, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &mpiStatus);
 	}
-	// Master process
 	else
 	{
 		keyLength = atoi(argv[1]);
-		keyOptions = pow(2, keyLength);
+		keyOptions = (int) pow(2, keyLength);
 		FILE *file = fopen(argv[2], "r");
 		if (!file)
 		{
@@ -102,23 +105,20 @@ int main(int argc, char *argv[])
 
 		knownWordsString = readStringFromFile(knownWordsFile, 512, &knownWordsLength);
 		data = readStringFromFile(file, 512, &inputSize);
-		// Let the slave process know the size of the data
-		MPI_Send(&inputSize, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);						 
-		MPI_Send(&keyOptions, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);		
+
 		fromKey = 0;
 		toKey = (int) keyOptions / 2;
-		// Half of the data will be processed by slave process 
-		MPI_Send(data, inputSize + 1, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+
+		MPI_Send(&inputSize, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+		MPI_Send(&knownWordsLength, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);					 
+		MPI_Send(&keyOptions, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);	
+
+		MPI_Send(data, inputSize, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+		MPI_Send(knownWordsString, knownWordsLength, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
 	}
 
-//	int itemsPerTask = inputSize / MPI_THREAD_COUNT;
-//	int finalHistogram[INPUT_MAX_VALUE] = {0};
-//
-//	// Each process gets 1/2 of the data, and devides it into 1/4 for each computing strategy
-//	// Compute 1/4 of the data via openMP
-	int res;
 	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength);
-	printf("res: %d\n", res);
+
 //
 //	// Compute 1/4 of the data via CUDA
 //	int cudaResult = computeOnGPU(data + itemsPerTask, finalHistogram, itemsPerTask, INPUT_MAX_VALUE);
