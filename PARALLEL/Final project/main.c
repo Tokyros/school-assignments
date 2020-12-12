@@ -41,14 +41,21 @@ int isValidText(char *text, char *knownWords) {
 	while( word != NULL ) {
 		if (strstr(text, word) != NULL) {
 			matchCount++;
-			// return 1;
 		}
 		word = strtok(NULL, separator);
 	}
 
-	printf("%s -> %d\n", text, matchCount);
-
 	return matchCount;
+}
+
+char* decipherWithKey(int key, int keyLen, char* data, int data_length) {
+	char* binaryString = numToBinaryString(key);
+
+	binaryStringToBinary(binaryString, keyLen);
+	char* deciphered = cipherString(binaryString, keyLen, data, data_length);
+	deciphered = (char*) realloc(deciphered, sizeof(char) * data_length + 1);
+	deciphered[data_length] = '\0';
+	return deciphered;
 }
 
 void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen, int* bestMatch) {
@@ -56,18 +63,14 @@ void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey
 
 	#pragma omp parallel for
 	for (int i = fromKey; i < toKey; i++) {
-		char* binaryString = numToBinaryString(i);
-
-		binaryStringToBinary(binaryString, keyLen);
-		char* deciphered = cipherString(binaryString, keyLen, data, data_length);
-		deciphered = (char* )realloc(deciphered, sizeof(char) * data_length + 1);
-		deciphered[data_length] = '\0';
-		// printf("%d -> %s -> %d\n", i, deciphered, isValidText(deciphered, words));
+		char* deciphered = decipherWithKey(i, keyLen, data, data_length);
 		int match = isValidText(deciphered, words);
 		if (match > *bestMatch) {
 			*key = i;
 			*bestMatch = match;
 		}
+
+		free(deciphered);
 	}
 }
 
@@ -84,7 +87,7 @@ int main(int argc, char *argv[])
 	int fromKey, toKey, keyOptions;
 	char *data, *knownWordsString;
 	MPI_Status mpiStatus;
-	int res, bestMatch;
+	int res, bestMatch = 0;
 
 	if (currentProcess == 1)
 	{
@@ -135,7 +138,25 @@ int main(int argc, char *argv[])
 	}
 
 	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength, &bestMatch);
-	printf("Result is - %d - %d\n", res, bestMatch);
+
+	if (currentProcess == 1) {
+		MPI_Send(&res, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+		MPI_Send(&bestMatch, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+	} else {
+		int otherRes;
+		int otherBestMatch;
+		MPI_Recv(&otherRes, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &mpiStatus);
+		MPI_Recv(&otherBestMatch, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &mpiStatus);
+
+		if (bestMatch > otherBestMatch) {
+			printf("found key - %d, deciphered string is:\n%s\n", res, decipherWithKey(res, keyLength, data, inputSize));
+		} else {
+			printf("found key - %d, deciphered string is:\n%s\n", otherRes, decipherWithKey(otherRes, keyLength, data, inputSize));
+		}
+	}
+
+	free(data);
+	free(knownWordsString);
 
 	MPI_Finalize();
 	return 0;
