@@ -10,7 +10,7 @@
 
 char *readStringFromFile(FILE *fp, size_t allocated_size, int *input_length);
 
-void binaryStringToBinary(char *string, size_t num_bytes);
+unsigned char* binaryStringToBinary(char *string, size_t num_bytes);
 
 void cipher(char *key, size_t key_len, FILE *input, FILE *output);
 
