@@ -8,4 +8,4 @@ clean:
 	rm -f *.o ./histogram
 
 run:
-	mpiexec -np 2 ./histogram 4 enc.txt words.txt
+	mpiexec -np 2 ./histogram 8 enc.txt words.txt

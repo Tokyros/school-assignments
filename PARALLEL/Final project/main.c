@@ -8,96 +8,67 @@
 
 #define MPI_THREAD_COUNT 4
 
-char* decimalToBinary(int n) {
-   int i = 0;
-   char *binary = (char*) malloc(sizeof(char) * 4);
-   binary = strdup("0000");
-   if (n == 0) {
-      return binary;
-   }
-   while (n > 0) {
-      binary[4 - 1 - i] = n % 2 + '0';
-      n = n / 2;
-      i++;
-   }
-   return binary;
-}
-
-int numToBinaryLength(int num) {
-	int res = 0;
-	while (num != 0) {
-		num /= 2;
-		res++;
+char* numToBinaryString(int num, int keyLen) {
+	char* binaryString = (char*) malloc(sizeof(char) * (keyLen));
+	for (int i = 0; i < keyLen; i++) {
+		binaryString[i] = '0';
 	}
+	binaryString[keyLen] = '\0';
 
-	return res;
-}
-
-char* numToBinaryString(int num) {
-	int stringLength = numToBinaryLength(num);
-	char* binaryString = (char*) malloc(sizeof(char) * (stringLength ));
-	binaryString = strdup("0000");
-	for (int c = 0; c < stringLength; c++) {
-		binaryString[stringLength - c - 1] = num % 2 + '0';
+	for (int c = 0; num > 0 && c < keyLen; c++) {
+		binaryString[keyLen - c - 1] = num % 2 + '0';
 		num /= 2;
 	}
 
-	// binaryString[stringLength] = '\0';
-
-	printf("numlen: %d = %s\n", stringLength, binaryString);
 	return binaryString;
 }
 
-int isValidText(char *text, char *knownWords) {
-	const char separator[2] = "\n";
+int countValidWords(char *text, char *knownWords) {
+	char* knownWordsCpy = strdup(knownWords);
+	const char separator[] = "\n";
 	char *word;
+	char *savePtr;
 	
-	word = strtok(knownWords, separator);
+	word = strtok_r(knownWordsCpy, separator, &savePtr);
 	int matchCount = 0;
 	
 	while( word != NULL ) {
 		if (strstr(text, word) != NULL) {
 			matchCount++;
 		}
-		word = strtok(NULL, separator);
+		word = strtok_r(NULL, separator, &savePtr);
 	}
 
 	return matchCount;
 }
 
 char* decipherWithKey(int key, int keyLen, char* data, int data_length) {
-	char* binaryString = decimalToBinary(key);
-	// char* binaryString = numToBinaryString(key);
-	printf("%d = %s\n", key, binaryString);
-
-	binaryStringToBinary(binaryString, keyLen);
-	char* deciphered = cipherString(binaryString, keyLen, data, data_length);
-	deciphered = (char*) realloc(deciphered, sizeof(char) * data_length + 1);
+	char* binaryString2 = numToBinaryString(key, keyLen);
+	binaryStringToBinary(binaryString2, keyLen);
+	char* deciphered = cipherString(binaryString2, keyLen, data, data_length);
+	deciphered = (char*) realloc(deciphered, data_length + 1);
 	deciphered[data_length] = '\0';
 	return deciphered;
 }
 
-void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen, int* bestMatch) {
-	omp_set_num_threads(8);
+void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen, int* bestMatch, int proc) {
+	int i, validWordsCount;
+	char* deciphered;
+	#pragma omp parallel for num_threads(3)
+	for (i = fromKey; i < toKey; i++) {
+		deciphered = decipherWithKey(i, keyLen, data, data_length);		
+		validWordsCount = countValidWords(deciphered, words);
+		if (i == 221) {
 
-	#pragma omp parallel for
-	for (int i = fromKey; i < toKey; i++) {
-		char* deciphered = decipherWithKey(i, keyLen, data, data_length);
-		// printf("key: %d - dec: %s\n",i, deciphered);
-		int match = isValidText(deciphered, words);
-		// printf("Thread: %d\n", omp_get_thread_num());
-		// printf("key: %d - match: %d - best: %d\n", i, match, *bestMatch);
-		// #pragma omp critical
-		// {
-			if (match > *bestMatch) {
-				*key = i;
-				*bestMatch = match;
-			}
-		// }
-		
-		
-
-		free(deciphered);
+			printf("%d->%d: %d=%s (%d)\n", proc, omp_get_thread_num(), i, deciphered, validWordsCount);
+		}
+		#pragma omp critical
+		{
+		if (validWordsCount > *bestMatch) {
+			*key = i;
+			*bestMatch = validWordsCount;
+		}
+		}
 	}
 }
 
@@ -166,8 +137,7 @@ int main(int argc, char *argv[])
 		MPI_Send(knownWordsString, knownWordsLength, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
 	}
 
-	// if (currentProcess == 1)
-	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength, &bestMatch);
+	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength, &bestMatch, currentProcess);
 
 	if (currentProcess == 1) {
 		MPI_Send(&res, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
