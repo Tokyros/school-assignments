@@ -24,7 +24,7 @@ __global__ void combineHistograms(int *from, int *to, int dataToProceess) {
 	}
 }
 
-int computeOnGPU(int *data, int *totalCount, int elementsToProcess, int numberMultThreads){
+int computeOnGPU(int *data, int *totalCount, int elementsToProcess){
 	
 	int CUDAHist[INPUT_MAX_VALUE * elementsToProcess] = {0};
 
