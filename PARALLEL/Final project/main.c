@@ -9,11 +9,10 @@
 #define MPI_THREAD_COUNT 4
 
 char* numToBinaryString(int num, int keyLen) {
-	char* binaryString = (char*) malloc(sizeof(char) * (keyLen));
+	char* binaryString = (char*) malloc(sizeof(char) * (keyLen + 200));
 	for (int i = 0; i < keyLen; i++) {
 		binaryString[i] = '0';
 	}
-	binaryString[keyLen] = '\0';
 
 	for (int c = 0; num > 0 && c < keyLen; c++) {
 		binaryString[keyLen - c - 1] = num % 2 + '0';
@@ -24,20 +23,18 @@ char* numToBinaryString(int num, int keyLen) {
 }
 
 int countValidWords(char *text, char *knownWords) {
-	
-	char* knownWordsCpy = strdup(knownWords);
-	const char separator[] = "\n";
+	const char separator[2] = "\n";
 	char *word;
-	char *savePtr;
+	char *knownWordsTmp = strdup(knownWords);
 	
-	word = strtok_r(knownWordsCpy, separator, &savePtr);
+	word = strtok(knownWordsTmp, separator);
 	int matchCount = 0;
 	
 	while( word != NULL ) {
 		if (strstr(text, word) != NULL) {
 			matchCount++;
 		}
-		word = strtok_r(NULL, separator, &savePtr);
+		word = strtok(NULL, separator);
 	}
 
 	return matchCount;
@@ -47,29 +44,27 @@ char* decipherWithKey(int key, int keyLen, char* data, int data_length) {
 	char* binaryString2 = numToBinaryString(key, keyLen);
 	binaryStringToBinary(binaryString2, keyLen);
 	char* deciphered = cipherString(binaryString2, keyLen, data, data_length);
+	free(binaryString2);
 	deciphered = (char*) realloc(deciphered, data_length + 1);
 	deciphered[data_length] = '\0';
 	return deciphered;
 }
 
 void OpenMPTask(char *data, int data_length, char *words, int fromKey, int toKey, int* key, int keyLen, int* bestMatch, int proc) {
-	int i, validWordsCount;
-	char* deciphered;
-	#pragma omp parallel for num_threads(3)
-	for (i = fromKey; i < toKey; i++) {
-		deciphered = decipherWithKey(i, keyLen, data, data_length);		
-		validWordsCount = countValidWords(deciphered, words);
-		if (i == 221) {
-
-			printf("%d->%d: %d=%s (%d)\n", proc, omp_get_thread_num(), i, deciphered, validWordsCount);
-		}
+	omp_set_num_threads(40);
+	#pragma omp parallel for
+	for (int i = fromKey; i < toKey; i++) {
+		char* deciphered = decipherWithKey(i, keyLen, data, data_length);	
+		int validWordsCount = countValidWords(deciphered, words);
+		
 		#pragma omp critical
 		{
-		if (validWordsCount > *bestMatch) {
-			*key = i;
-			*bestMatch = validWordsCount;
+			if (validWordsCount > *bestMatch) {
+				*key = i;
+				*bestMatch = validWordsCount;
+			}
 		}
-		}
+		free(deciphered);
 	}
 }
 
@@ -86,7 +81,7 @@ int main(int argc, char *argv[])
 	int fromKey, toKey, keyOptions;
 	char *data, *knownWordsString;
 	MPI_Status mpiStatus;
-	int res = NULL, bestMatch = 0;
+	int res = -1, bestMatch = 0;
 
 
 	if (currentProcess == 1)
@@ -139,6 +134,7 @@ int main(int argc, char *argv[])
 	}
 
 	OpenMPTask(data, inputSize, knownWordsString, fromKey, toKey, &res, keyLength, &bestMatch, currentProcess);
+	printf("res: %d, match: %d\n", res, bestMatch);
 
 	if (currentProcess == 1) {
 		MPI_Send(&res, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
@@ -150,7 +146,7 @@ int main(int argc, char *argv[])
 		MPI_Recv(&otherBestMatch, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &mpiStatus);
 
 		printf("otherRes: %d, otherMatch: %d\nres: %d, match: %d\n", otherRes, otherBestMatch, res, bestMatch);
-		if (res == NULL && otherRes == NULL) {
+		if (res == -1 && otherRes == -1) {
 			printf("Could not find key :(\n");
 		} else if (bestMatch > otherBestMatch) {
 			printf("found key - %d, deciphered string is:\n%s\n", res, decipherWithKey(res, keyLength, data, inputSize));
