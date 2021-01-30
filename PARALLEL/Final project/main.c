@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 			knownWordsFile = fopen(argv[3], "r");
 		} else {
 			printf("No words file passed, using default file\n");
-			knownWordsFile = fopen("defaultWords.txt", "r");
+			knownWordsFile = fopen("./text-files/defaultWords.txt", "r");
 		}
 		if (!knownWordsFile) {
 			printf("Could not open %s\n", argv[3]);
