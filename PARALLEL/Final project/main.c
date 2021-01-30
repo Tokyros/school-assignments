@@ -24,6 +24,7 @@ char* numToBinaryString(int num, int keyLen) {
 }
 
 int countValidWords(char *text, char *knownWords) {
+	
 	char* knownWordsCpy = strdup(knownWords);
 	const char separator[] = "\n";
 	char *word;
