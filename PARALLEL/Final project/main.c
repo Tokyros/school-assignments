@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <math.h>
 #include "simple_hash.h"
-#include "cipher.h"
+#include "utils.h"
 #include "cudaFunctions.h"
 
 #define MPI_THREAD_COUNT 4
 
-char* numToBinaryString(int num, int keyLen) {
+// Convert a number into it's binary string representation
+char* numToBinaryString(int num, int keyLen /* in bytes */) {
 	char* binaryString = (char*) malloc(sizeof(char) * (keyLen * 8));
 	for (int i = 0; i < keyLen; i++) {
 		binaryString[i] = '0';
@@ -23,6 +24,7 @@ char* numToBinaryString(int num, int keyLen) {
 	return binaryString;
 }
 
+// Count how many words inside `text` appear in the `knownWords` hash set
 int countValidWords(char *text, hashset_t knownWords) {
 	const char separator[3] = " \n";
 	char *word;
@@ -40,6 +42,7 @@ int countValidWords(char *text, hashset_t knownWords) {
 	return matchCount;
 }
 
+// Deciphers the text inside `data` using `key`
 char* decipherWithKey(int key, int keyLen, char* data, int data_length) {
 	char* binaryString2 = numToBinaryString(key, keyLen);
 	binaryStringToBinary(binaryString2, keyLen);
@@ -50,6 +53,7 @@ char* decipherWithKey(int key, int keyLen, char* data, int data_length) {
 	return deciphered;
 }
 
+// Takes list of words separated by new-lines and adds them to a hashset
 hashset_t createWordsHashset(char* words) {
 	hashset_t set = hashset_create();
 	const char separator[2] = "\n";
@@ -67,11 +71,14 @@ hashset_t createWordsHashset(char* words) {
 	return set;
 }
 
+// The result returned from every openMp task, will contain the best matching key tried by that task
 typedef struct {
 	int key;
 	int matchCount;
 } MP_Result;
 
+// Bruteforce decrypt using a set of keys, match the decrypted text against a known words hashset
+// In the end return the best matching attempt from the bruteforce
 MP_Result OpenMPTask(char *data, int data_length, hashset_t words, int fromKey, int toKey, int keyLen) {
 	int bestKey = -1;
 	int bestMatch = -1;
@@ -99,6 +106,7 @@ MP_Result OpenMPTask(char *data, int data_length, hashset_t words, int fromKey, 
 
 int main(int argc, char *argv[])
 {
+	// MPI initialisations
 	int currentProcess, processCount;
 
 	MPI_Init(&argc, &argv);
@@ -114,6 +122,7 @@ int main(int argc, char *argv[])
 	int encryptionKey = -1, bestMatch = 0;
 
 
+	// Slave process
 	if (currentProcess == 1)
 	{
 		MPI_Recv(&inputSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &mpiStatus);
@@ -130,6 +139,7 @@ int main(int argc, char *argv[])
 		fromKey = (int) keyOptions / 2 + 1;
 		toKey = (int) keyOptions;
 	}
+	// Master process
 	else
 	{
 		keyLength = atoi(argv[1]);
@@ -170,7 +180,6 @@ int main(int argc, char *argv[])
 
 	wordsSet = createWordsHashset(knownWordsString);
 	MP_Result res = OpenMPTask(data, inputSize, wordsSet, fromKey, toKey, keyLength);
-	printf("Result is - key=%d, match=%d\n", res.key, res.matchCount);
 	encryptionKey = res.key;
 	bestMatch = res.matchCount;
 
@@ -183,9 +192,8 @@ int main(int argc, char *argv[])
 		MPI_Recv(&otherEncryptionKey, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &mpiStatus);
 		MPI_Recv(&otherBestMatch, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &mpiStatus);
 
-		printf("otherEncryptionKey: %d, otherMatch: %d\nres: %d, match: %d\n", otherEncryptionKey, otherBestMatch, encryptionKey, bestMatch);
 		if (encryptionKey == -1 && otherEncryptionKey == -1) {
-			printf("Could not find key :(\n");
+			printf("Could not find encryption key\n");
 		} else if (bestMatch > otherBestMatch) {
 			printf("found key - %d, deciphered string is:\n%s\n", encryptionKey, decipherWithKey(encryptionKey, keyLength, data, inputSize));
 		} else {
