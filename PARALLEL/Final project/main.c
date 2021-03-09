@@ -5,7 +5,6 @@
 #include <math.h>
 #include "simple_hash.h"
 #include "utils.h"
-#include "cudaFunctions.h"
 
 #define MPI_THREAD_COUNT 4
 
